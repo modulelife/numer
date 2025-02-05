@@ -1455,7 +1455,7 @@ namespace numer {
 		size_type ncols() const { return ncols_; }
 
 		//availability test
-		operator bool() const { return data_ != nullptr; }
+		explicit operator bool() const { return data_ != nullptr; }
 
 		//empty test
 		bool empty() const { return data_ == nullptr; }
