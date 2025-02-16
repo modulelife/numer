@@ -56,7 +56,7 @@ namespace numer {
         }
 
 
-        //hey! you shouldn't use thid
+        //hey! you shouldn't use this
 		template<bool Inverse_, class Array>
 		inline void fft_radix2__(Array& seq_cplx_, const size_t len_)
         {
