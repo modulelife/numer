@@ -1356,14 +1356,14 @@ namespace numer {
 		mat() : nrows_(0), ncols_(0), data_(nullptr) {}
 
 		//ctor specifying initial size
-		mat(size_t Rows_, size_t Cols_)
+		mat(const size_t Rows_, const size_t Cols_)
 			: nrows_(Rows_), ncols_(Cols_)
 		{
 			data_ = allocate_(count_());
 		}
 
 		//ctor specifying initial size & element value
-		mat(size_t Rows_, size_t Cols_, const Ty& Value_)
+		mat(const size_t Rows_, const size_t Cols_, const Ty& Value_)
 			:nrows_(Rows_), ncols_(Cols_)
 		{
 			data_ = allocate_and_fill_(count_(), Value_);
@@ -1566,56 +1566,56 @@ namespace numer {
 
 		//factory method accepting a Generator : Ty (size_t i, size_t j), i/j stands for row/col index
 		template<class EntrywiseGenerator>
-		static mat<Ty, Alloc> creat(size_t Rows_, size_t Cols_, EntrywiseGenerator Generate_);
+		static mat<Ty, Alloc> creat(const size_t Rows_, const size_t Cols_, EntrywiseGenerator&& Generate_);
 
 		//factory method accepting mat of another type and a Converter : Ty (const Tx&)
 		template<class EntrywiseConverter, typename Tx, class Allocx>
-		static mat<Ty, Alloc> creat(const mat<Tx, Allocx>& Src_, EntrywiseConverter Convert_);
+		static mat<Ty, Alloc> creat(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_);
 
 		//parapllel execution ver. of factory method accepting a Generator : Ty (size_t i, size_t j), i/j stands for row/col index
 		template<class EntrywiseGenerator>
-		static mat<Ty, Alloc> creat_par(size_t Rows_, size_t Cols_, EntrywiseGenerator Generate_);
+		static mat<Ty, Alloc> creat_par(const size_t Rows_, const size_t Cols_, EntrywiseGenerator&& Generate_);
 
 		//parapllel execution ver. of factory method accepting mat of another type and a  : Ty Convert_(const Tx&)
 		template<class EntrywiseConverter, typename Tx, class Allocx>
-		static mat<Ty, Alloc> creat_par(const mat<Tx, Allocx>& Src_, EntrywiseConverter Convert_);
+		static mat<Ty, Alloc> creat_par(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_);
 
 		//select entries in range [R1, R2) X [C1, C2), returning a new mat
 		mat<Ty, Alloc> select_range(size_t R1_, size_t R2_, size_t C1_, size_t C2_) const noexcept(false);
 
 		//modify all elements with a Modifer : void (Ty&)
 		template<class Modifier>
-		void modify(Modifier Modify_);
+		void modify(Modifier&& Modify_);
 
 		//parallel execution ver. modify all elements with a Modifer : void (Ty&)
 		template<class Modifier>
-		void modify_par(Modifier Modify_);
+		void modify_par(Modifier&& Modify_);
 
 		//put a Patch_ on caller mat at (Row_Pos, Col_Pos), aligning upper-left corner of the Patch_
 		//if range is invalid, no changes will be made, thus "noexcept"
 		//Mixer should be any callable object with signature " Ty (const Ty&, const Ty&) "
 		template<class Mixer>
-		void overlay(const mat<Ty, Alloc>& Patch_, Mixer Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept;
+		void overlay(const mat<Ty, Alloc>& Patch_, Mixer&& Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept;
 
 		//overlay method for all compatible types, Mixer : any callable " Ty (const Ty&, const Tx&) "
 		template<class Mixer, typename Tx, class Allocx>
-		void overlay(const mat<Tx, Allocx>& Patch_, Mixer Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept;
+		void overlay(const mat<Tx, Allocx>& Patch_, Mixer&& Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept;
 
 		//overlay method dedicated for patch of the same shape
 		template<class Mixer>
-		void overlay(const mat<Ty, Alloc>& Mask_, Mixer Mix_) noexcept(false);
+		void overlay(const mat<Ty, Alloc>& Mask_, Mixer&& Mix_) noexcept(false);
 
 		//overlay method dedicated for patch of the same shape, for all compatible types
 		template<class Mixer, typename Tx, class Allocx>
-		void overlay(const mat<Tx, Allocx>& Mask_, Mixer Mix_) noexcept(false);
+		void overlay(const mat<Tx, Allocx>& Mask_, Mixer&& Mix_) noexcept(false);
 
 		//parallel execution ver. of overlay method dedicated for patch of the same shape
 		template<class Mixer>
-		void overlay_par(const mat<Ty, Alloc>& Mask_, Mixer Mix_) noexcept(false);
+		void overlay_par(const mat<Ty, Alloc>& Mask_, Mixer&& Mix_) noexcept(false);
 
 		//parallel execution ver. of overlay method dedicated for patch of the same shape, for all compatible types
 		template<class Mixer, typename Tx, class Allocx>
-		void overlay_par(const mat<Tx, Allocx>& Mask_, Mixer Mix_) noexcept(false);
+		void overlay_par(const mat<Tx, Allocx>& Mask_, Mixer&& Mix_) noexcept(false);
 
 	};
 
@@ -1624,7 +1624,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class EntrywiseGenerator>
-	mat<Ty, Alloc> mat<Ty, Alloc>::creat(size_t Rows_, size_t Cols_, EntrywiseGenerator Generate_)
+	mat<Ty, Alloc> mat<Ty, Alloc>::creat(const size_t Rows_, const size_t Cols_, EntrywiseGenerator&& Generate_)
 	{
 		mat<Ty, Alloc> result(Rows_, Cols_);
 		Ty* iter = result.mem_begin_();
@@ -1639,7 +1639,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class EntrywiseConverter, typename Tx, class Allocx>
-	static mat<Ty, Alloc> mat<Ty, Alloc>::creat(const mat<Tx, Allocx>& Src_, EntrywiseConverter Convert_)
+	static mat<Ty, Alloc> mat<Ty, Alloc>::creat(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_)
 	{
 		mat<Ty, Alloc> result(Src_.nrows(), Src_.ncols());
 		Ty* iter = result.mem_begin_();
@@ -1654,7 +1654,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class EntrywiseGenerator>
-	static mat<Ty, Alloc> mat<Ty, Alloc>::creat_par(size_t Rows_, size_t Cols_, EntrywiseGenerator Generate_)
+	static mat<Ty, Alloc> mat<Ty, Alloc>::creat_par(const size_t Rows_, const size_t Cols_, EntrywiseGenerator&& Generate_)
 	{
 		using args__ = struct { Ty* row_begin__; size_t i__; };
 
@@ -1680,7 +1680,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class EntrywiseConverter, typename Tx, class Allocx>
-	static mat<Ty, Alloc> mat<Ty, Alloc>::creat_par(const mat<Tx, Allocx>& Src_, EntrywiseConverter Convert_)
+	static mat<Ty, Alloc> mat<Ty, Alloc>::creat_par(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_)
 	{
 		mat<Ty, Alloc> result(Src_.nrows(), Src_.ncols());
 		std::transform(std::execution::par_unseq, Src_.mem_begin_(), Src_.mem_end_(), result.mem_begin_(), Convert_);
@@ -1740,21 +1740,21 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class Modifier>
-	void mat<Ty, Alloc>::modify(Modifier Modify_)
+	void mat<Ty, Alloc>::modify(Modifier&& Modify_)
 	{
 		std::for_each_n(mem_begin_(), count_(), Modify_);
 	}
 
 	template<typename Ty, class Alloc>
 	template<class Modifier>
-	void mat<Ty, Alloc>::modify_par(Modifier Modify_)
+	void mat<Ty, Alloc>::modify_par(Modifier&& Modify_)
 	{
 		std::for_each_n(std::execution::par_unseq, mem_begin_(), count_(), Modify_);
 	}
 
 	template<typename Ty, class Alloc>
 	template<class Mixer>
-	void mat<Ty, Alloc>::overlay(const mat<Ty, Alloc>& Patch_, Mixer Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept
+	void mat<Ty, Alloc>::overlay(const mat<Ty, Alloc>& Patch_, Mixer&& Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept
 	{
 		size_t rows = Patch_.nrows();
 		size_t cols = Patch_.ncols();
@@ -1775,7 +1775,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class Mixer, typename Tx, class Allocx>
-	void mat<Ty, Alloc>::overlay(const mat<Tx, Allocx>& Patch_, Mixer Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept
+	void mat<Ty, Alloc>::overlay(const mat<Tx, Allocx>& Patch_, Mixer&& Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept
 	{
 		size_t rows = Patch_.nrows();
 		size_t cols = Patch_.ncols();
@@ -1796,7 +1796,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class Mixer>
-	void mat<Ty, Alloc>::overlay(const mat<Ty, Alloc>& Mask_, Mixer Mix_) noexcept(false)
+	void mat<Ty, Alloc>::overlay(const mat<Ty, Alloc>& Mask_, Mixer&& Mix_) noexcept(false)
 	{
 		if (nrows() != Mask_.nrows() || ncols() != Mask_.ncols()) throw std::range_error("the shapes of the two mats do not match");
 
@@ -1811,7 +1811,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class Mixer, typename Tx, class Allocx>
-	void mat<Ty, Alloc>::overlay(const mat<Tx, Allocx>& Mask_, Mixer Mix_) noexcept(false)
+	void mat<Ty, Alloc>::overlay(const mat<Tx, Allocx>& Mask_, Mixer&& Mix_) noexcept(false)
 	{
 		if (nrows() != Mask_.nrows() || ncols() != Mask_.ncols()) throw std::range_error("the shapes of the two mats do not match");
 
@@ -1826,7 +1826,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class Mixer>
-	void mat<Ty, Alloc>::overlay_par(const mat<Ty, Alloc>& Mask_, Mixer Mix_) noexcept(false)
+	void mat<Ty, Alloc>::overlay_par(const mat<Ty, Alloc>& Mask_, Mixer&& Mix_) noexcept(false)
 	{
 		if (nrows() != Mask_.nrows() || ncols() != Mask_.ncols()) throw std::range_error("the shapes of the two mats do not match");
 
@@ -1835,7 +1835,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class Mixer, typename Tx, class Allocx>
-	void mat<Ty, Alloc>::overlay_par(const mat<Tx, Allocx>& Mask_, Mixer Mix_) noexcept(false)
+	void mat<Ty, Alloc>::overlay_par(const mat<Tx, Allocx>& Mask_, Mixer&& Mix_) noexcept(false)
 	{
 		if (nrows() != Mask_.nrows() || ncols() != Mask_.ncols()) throw std::range_error("the shapes of the two mats do not match");
 

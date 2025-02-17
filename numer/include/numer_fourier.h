@@ -58,7 +58,7 @@ namespace numer {
 
         //hey! you shouldn't use this
 		template<bool Inverse_, class Array>
-		inline void fft_radix2__(Array& seq_cplx_, const size_t len_)
+		inline void fft_radix2__(Array&& seq_cplx_, const size_t len_)
         {
             constexpr double sign = Inverse_ ? 1.0 : -1.0;
             const int log2n = std::countr_zero(len_);
@@ -94,7 +94,7 @@ namespace numer {
 
         //hey! you shouldn't use this
         template<bool Inverse_, class Array>
-        inline void fft_bluestein__(Array& seq_cplx_, const size_t len_)
+        inline void fft_bluestein__(Array&& seq_cplx_, const size_t len_)
         {
             constexpr double sign = Inverse_ ? -1.0 : 1.0;
             const size_t len_ex = to_pow2_up(2 * len_ - 1);
@@ -150,7 +150,7 @@ namespace numer {
     //in-place FFT
     //normalize factor N^0.5 for FT and IFT
     template<class Array>
-    inline void fft_ortho(Array& Seq_Complx_, const size_t Len_)
+    inline void fft_ortho(Array&& Seq_Complx_, const size_t Len_)
     {
         if (is_pow2(Len_)) detail_::fft_radix2__<false>(Seq_Complx_, Len_);
         else detail_::fft_bluestein__<false>(Seq_Complx_, Len_);
@@ -159,13 +159,12 @@ namespace numer {
         for (size_t i = 0; i < Len_; ++i) {
             Seq_Complx_[i] /= normalizer;
         }
-        
     }
 
     //in-place FFT
     //normalize factor N^0.5 for FT and IFT
     template<class Array>
-    inline void ifft_ortho(Array& Seq_Complx_, const size_t Len_)
+    inline void ifft_ortho(Array&& Seq_Complx_, const size_t Len_)
     {
         if (is_pow2(Len_)) detail_::fft_radix2__<true>(Seq_Complx_, Len_);
         else detail_::fft_bluestein__<true>(Seq_Complx_, Len_);
@@ -180,7 +179,7 @@ namespace numer {
     //in-place FFT
     //normalize factor 1 for FT and N for IFT
     template<class Array>
-    inline void fft(Array& Seq_Complx_, const size_t Len_)
+    inline void fft(Array&& Seq_Complx_, const size_t Len_)
     {
         if (is_pow2(Len_)) detail_::fft_radix2__<false>(Seq_Complx_, Len_);
         else detail_::fft_bluestein__<false>(Seq_Complx_, Len_);
@@ -189,7 +188,7 @@ namespace numer {
     //in-place FFT
     //normalize factor 1 for FT and N for IFT
     template<class Array>
-    inline void ifft(Array& Seq_Complx_, const size_t Len_)
+    inline void ifft(Array&& Seq_Complx_, const size_t Len_)
     {
         if (is_pow2(Len_)) detail_::fft_radix2__<true>(Seq_Complx_, Len_);
         else detail_::fft_bluestein__<true>(Seq_Complx_, Len_);
