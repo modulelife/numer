@@ -81,7 +81,7 @@ void ComplxMatTest::run()
 		c_field, ComplxPhaseClr(Color::GrayScale()));
 	BENCHMARK_END(complxphase_img);
 
-	stbi::ImageWriter writer(stbi::FORMAT::PNG);
+	stbi::ImageWriter<stbi::format::PNG> writer;
 
 	BENCHMARK_BEGIN(write_img_file);
 	writer.writeInto("./image/complx_mat/amplitude", amp_img[0], amp_img.ncols(), amp_img.nrows());
