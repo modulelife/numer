@@ -37,15 +37,8 @@ namespace numer {
     //you shouldn't use these
 	namespace detail_{
 
-		inline Complex w__(double k_, double p_, double N_) {
-			return Complex::expi(-2.0 * Pi * k_ * p_ / N_);
-		}
 
-        inline Complex w__(double p_, double N_) {
-            return Complex::expi(-2.0 * Pi * p_ / N_);
-        }
-
-        template <typename Uint>
+		template <typename Uint>
         inline Uint bit_reverse__(Uint x_, int low_bits_) {
             Uint reversed = 0;
             for (int i = 0; i < low_bits_; ++i) {
@@ -61,18 +54,29 @@ namespace numer {
 		inline void fft_radix2__(Array&& seq_cplx_, const size_t len_)
         {
             constexpr double sign = Inverse_ ? 1.0 : -1.0;
-            const int log2n = std::countr_zero(len_);
+
+            thread_local std::vector<size_t> pos(len_);
+            thread_local bool init = false;
+
+            if (pos.size() != len_) init = false;
+            if (pos.size() < len_) pos.resize(len_);
+            if (!init) {
+                const int log2n = std::countr_zero(len_);
+                for (size_t i = 0; i < len_; ++i) {
+                    pos[i] = bit_reverse__(i, log2n);
+                }
+            }
 
             // in-place rearranment, good for cache hit
             for (size_t i = 0; i < len_; ++i) {
-                size_t rev = bit_reverse__(i, log2n);
+                size_t rev = pos[i];
                 if (i < rev) std::swap(seq_cplx_[i], seq_cplx_[rev]);
             }
 
             // staged butterfly operation
             for (size_t m = 2; m <= len_; m *= 2) {
                 const size_t m2 = m / 2;
-                const Complex wm = w__(sign, m);
+                const Complex wm = Complex::expi(-2.0 * Pi * sign / m);
 
                 for (size_t k = 0; k < len_; k += m) {
                     Complex w = 1.0;
@@ -101,16 +105,27 @@ namespace numer {
             const double N = static_cast<double>(len_);
             const double M = static_cast<double>(len_ex);
 
-            std::vector<Complex> a(len_ex, 0.0);
-            std::vector<Complex> b(len_ex, 0.0);
-            std::vector<Complex> w(len_ex);
-            for (size_t i = 0; i < len_; ++i) {
-                const double n = static_cast<double>(i);
-                w[i] = Complex::expi(sign * Pi * n * n / N);
+            thread_local std::vector<Complex> a(len_ex);
+            thread_local std::vector<Complex> b(len_ex);
+            thread_local std::vector<Complex> w(len_ex);
+            thread_local bool init = false;
+
+            if(w.size() != len_ex) init = false;
+            if (w.size() < len_ex) {
+                a.resize(len_ex);
+                b.resize(len_ex);
+                w.resize(len_ex);
             }
-            for (size_t i = len_; i < len_ex; ++i) {
-                const double n = static_cast<double>(i);
-                w[i] = Complex::expi(sign * Pi * (M - n) * (M - n) / N);
+            if (!init) {
+                for (size_t i = 0; i < len_; ++i) {
+                    const double n = static_cast<double>(i);
+                    w[i] = Complex::expi(sign * Pi * n * n / N);
+                }
+                for (size_t i = len_; i < len_ex; ++i) {
+                    const double n = static_cast<double>(i);
+                    w[i] = Complex::expi(sign * Pi * (M - n) * (M - n) / N);
+                }
+                init = true;
             }
 
 #pragma omp simd
@@ -120,6 +135,7 @@ namespace numer {
             }
 #pragma omp simd
             for (size_t i = len_; i < len_ex; ++i) {
+                a[i] = 0.0;
                 b[i] = w[i];
             }
 
