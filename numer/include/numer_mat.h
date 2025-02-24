@@ -1639,7 +1639,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class EntrywiseConverter, typename Tx, class Allocx>
-	static mat<Ty, Alloc> mat<Ty, Alloc>::creat(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_)
+	mat<Ty, Alloc> mat<Ty, Alloc>::creat(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_)
 	{
 		mat<Ty, Alloc> result(Src_.nrows(), Src_.ncols());
 		Ty* iter = result.mem_begin_();
@@ -1654,7 +1654,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class EntrywiseGenerator>
-	static mat<Ty, Alloc> mat<Ty, Alloc>::creat_par(const size_t Rows_, const size_t Cols_, EntrywiseGenerator&& Generate_)
+	mat<Ty, Alloc> mat<Ty, Alloc>::creat_par(const size_t Rows_, const size_t Cols_, EntrywiseGenerator&& Generate_)
 	{
 		using args__ = struct { Ty* row_begin__; size_t i__; };
 
@@ -1680,7 +1680,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class EntrywiseConverter, typename Tx, class Allocx>
-	static mat<Ty, Alloc> mat<Ty, Alloc>::creat_par(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_)
+	mat<Ty, Alloc> mat<Ty, Alloc>::creat_par(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_)
 	{
 		mat<Ty, Alloc> result(Src_.nrows(), Src_.ncols());
 		std::transform(std::execution::par_unseq, Src_.mem_begin_(), Src_.mem_end_(), result.mem_begin_(), Convert_);
