@@ -36,6 +36,7 @@
 #include <memory>
 #include <algorithm>
 #include <execution>
+#include <vector>
 
 
 
@@ -1530,7 +1531,7 @@ namespace numer {
 			return data_ + ncols_ * Row_Id_;
 		}
 
-		//static 2d-array const access row
+		//classic 2d-array const access row
 		const_pointer operator[](size_t Row_Id_) const noexcept
 		{
 			return data_ + ncols_ * Row_Id_;
@@ -1539,28 +1540,28 @@ namespace numer {
 		//access row
 		row_view row(size_t Row_Id_) noexcept(false)
 		{
-			if (Row_Id_ >= nrows_) throw std::out_of_range("index out of range");
+			if (Row_Id_ >= nrows()) throw std::out_of_range("index out of range");
 			return row_view(Row_Id_, data_, ncols_);
 		}
 
 		//const access row
 		const row_view row(size_t Row_Id_) const noexcept(false)
 		{
-			if (Row_Id_ >= nrows_) throw std::out_of_range("index out of range");
+			if (Row_Id_ >= nrows()) throw std::out_of_range("index out of range");
 			return row_view(Row_Id_, data_, ncols_);
 		}
 
 		//access column
 		col_view col(size_t Col_Id_) noexcept(false)
 		{
-			if (Col_Id_ >= ncols_) throw std::out_of_range("index out of range");
+			if (Col_Id_ >= ncols()) throw std::out_of_range("index out of range");
 			return col_view(Col_Id_, data_, ncols_, nrows_);
 		}
 
 		//const access column
 		const col_view col(size_t Col_Id_) const noexcept(false)
 		{
-			if (Col_Id_ >= ncols_) throw std::out_of_range("index out of range");
+			if (Col_Id_ >= ncols()) throw std::out_of_range("index out of range");
 			return col_view(Col_Id_, data_, ncols_, nrows_);
 		}
 
@@ -1579,6 +1580,14 @@ namespace numer {
 		//parapllel execution ver. of factory method accepting mat of another type and a  : Ty Convert_(const Tx&)
 		template<class EntrywiseConverter, typename Tx, class Allocx>
 		static mat<Ty, Alloc> creat_par(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_);
+
+		//refill the mat with a Generate
+		template<class EntrywiseGenerator>
+		static mat<Ty, Alloc> refill(EntrywiseGenerator&& Generate_);
+
+		//refill the mat with a Generate
+		template<class EntrywiseGenerator>
+		static mat<Ty, Alloc> refill_par(EntrywiseGenerator&& Generate_);
 
 		//select entries in range [R1, R2) X [C1, C2), returning a new mat
 		mat<Ty, Alloc> select_range(size_t R1_, size_t R2_, size_t C1_, size_t C2_) const noexcept(false);
@@ -1661,20 +1670,19 @@ namespace numer {
 		mat<Ty, Alloc> result(Rows_, Cols_);
 		
 		Ty* row_begin = result.mem_begin_();
-		args__* args_list = new args__[Rows_];
+		std::vector<args__> args_list(Rows_);
 		for (size_t i = 0; i < Rows_; ++i) {
 			args_list[i] = { row_begin, i};
 			row_begin += Cols_;
 		}
 
-		std::for_each_n(std::execution::par, args_list, Rows_,
+		std::for_each_n(std::execution::par, args_list.begin(), Rows_,
 			[&](args__ args) {
 				for (size_t j = 0; j < Cols_; ++j)
 				{
 					*args.row_begin__++ = Generate_(args.i__, j);
 				}
 			});
-		delete[] args_list;
 		return result;
 	}
 
@@ -1715,6 +1723,44 @@ namespace numer {
 			if (*iter != *oiter) return false;
 		}
 		return true;
+	}
+
+	template<typename Ty, class Alloc>
+	template<class EntrywiseGenerator>
+	mat<Ty, Alloc> mat<Ty, Alloc>::refill(EntrywiseGenerator&& Generate_)
+	{
+		Ty* iter = mem_begin_();
+		const size_t rows = nrows(), cols = ncols();
+		for (size_t i = 0; i < rows; ++i)
+		{
+			for (size_t j = 0; j < cols; ++j) {
+				*iter++ = Generate_(i, j);
+			}
+		}
+	}
+
+	template<typename Ty, class Alloc>
+	template<class EntrywiseGenerator>
+	mat<Ty, Alloc> mat<Ty, Alloc>::refill_par(EntrywiseGenerator&& Generate_)
+	{
+		using args__ = struct { Ty* row_begin__; size_t i__; };
+
+		Ty* row_begin = mem_begin_();
+		const size_t rows = nrows(), cols = ncols();
+
+		std::vector<args__> args_list(rows);
+		for (size_t i = 0; i < rows; ++i) {
+			args_list[i] = { row_begin, i };
+			row_begin += cols;
+		}
+
+		std::for_each_n(std::execution::par, args_list.begin(), rows,
+			[&](args__ args) {
+				for (size_t j = 0; j < cols; ++j)
+				{
+					*args.row_begin__++ = Generate_(args.i__, j);
+				}
+			});
 	}
 
 	template<typename Ty, class Alloc>

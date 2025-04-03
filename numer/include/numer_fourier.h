@@ -25,10 +25,13 @@
 #include <numer_constant.h>
 #include <numer_complex.h>
 #include <numer_common.h>
+#include <numer_mat.h>
 #include <bit>
 #include <utility>
 #include <cmath>
 #include <vector>
+#include <algorithm>
+#include <execution>
 
 
 namespace numer {
@@ -305,7 +308,98 @@ namespace numer {
     }
 
 	
-	
+	//in-place FFT for 2d complex field in mat<Complex>
+    //normalize factor N^0.5 for FT and IFT
+    template<class Alloc__>
+    inline void fft2d_ortho_par(mat<Complex, Alloc__>& Field_Complx_)
+    {
+        size_t X = Field_Complx_.ncols();
+        size_t Y = Field_Complx_.nrows();
+        std::vector<size_t> argsx(Y);
+        std::vector<size_t> argsy(X);
+
+        for (size_t i = 0; i < Y; ++i) {
+            argsx[i] = i;
+        }
+        for (size_t j = 0; j < X; ++j) {
+            argsy[j] = j;
+        }
+
+        std::for_each_n(std::execution::par, argsx.begin(), Y,
+            [&](size_t id) { fft_ortho(Field_Complx_[id], X); });
+        std::for_each_n(std::execution::par, argsy.begin(), X,
+            [&](size_t id) { fft_ortho(Field_Complx_.col(id).begin(), Y); });
+    }
+
+    //in-place FFT for 2d complex field in mat<Complex>
+    //normalize factor N^0.5 for FT and IFT
+    template<class Alloc__>
+    inline void ifft2d_ortho_par(mat<Complex, Alloc__>& Field_Complx_)
+    {
+        size_t X = Field_Complx_.ncols();
+        size_t Y = Field_Complx_.nrows();
+        std::vector<size_t> argsx(Y);
+        std::vector<size_t> argsy(X);
+
+        for (size_t i = 0; i < Y; ++i) {
+            argsx[i] = i;
+        }
+        for (size_t j = 0; j < X; ++j) {
+            argsy[j] = j;
+        }
+
+        std::for_each_n(std::execution::par, argsx.begin(), Y,
+            [&](size_t id) { ifft_ortho(Field_Complx_[id], X); });
+        std::for_each_n(std::execution::par, argsy.begin(), X,
+            [&](size_t id) { ifft_ortho(Field_Complx_.col(id).begin(), Y); });
+    }
+
+    //in-place FFT for 2d complex field in mat<Complex>
+    //normalize factor 1 for FT and N for IFT
+    template<class Alloc__>
+    inline void fft2d_par(mat<Complex, Alloc__>& Field_Complx_)
+    {
+        size_t X = Field_Complx_.ncols();
+        size_t Y = Field_Complx_.nrows();
+        std::vector<size_t> argsx(Y);
+        std::vector<size_t> argsy(X);
+
+        for (size_t i = 0; i < Y; ++i) {
+            argsx[i] = i;
+        }
+        for (size_t j = 0; j < X; ++j) {
+            argsy[j] = j;
+        }
+
+        std::for_each_n(std::execution::par, argsx.begin(), Y,
+            [&](size_t id) { fft(Field_Complx_[id], X); });
+        std::for_each_n(std::execution::par, argsy.begin(), X,
+            [&](size_t id) { fft(Field_Complx_.col(id).begin(), Y); });
+    }
+
+    //in-place FFT for 2d complex field in mat<Complex>
+    //normalize factor 1 for FT and N for IFT
+    template<class Alloc__>
+    inline void ifft2d_par(mat<Complex, Alloc__>& Field_Complx_)
+    {
+        size_t X = Field_Complx_.ncols();
+        size_t Y = Field_Complx_.nrows();
+        std::vector<size_t> argsx(Y);
+        std::vector<size_t> argsy(X);
+
+        for (size_t i = 0; i < Y; ++i) {
+            argsx[i] = i;
+        }
+        for (size_t j = 0; j < X; ++j) {
+            argsy[j] = j;
+        }
+
+        std::for_each_n(std::execution::par, argsx.begin(), Y,
+            [&](size_t id) { ifft(Field_Complx_[id], X); });
+        std::for_each_n(std::execution::par, argsy.begin(), X,
+            [&](size_t id) { ifft(Field_Complx_.col(id).begin(), Y); });
+    }
+
 
 }//namespace numer end
 
