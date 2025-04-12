@@ -483,17 +483,17 @@ namespace numer {
 	}
 
 
-	RGB ComplxRainbowClr::operator()(Complex c_) const {
-		double H = 360.0 * c_.phase() / (2.0 * Pi);
-		double L = 100.0 * 0.5 * tanh(c_.amplitude() / max_amp_);
+	RGB ComplxRainbowClr::operator()(Complex C_) const {
+		double H = 360.0 * C_.phase() / (2.0 * Pi);
+		double L = 100.0 * 0.5 * tanh(C_.amplitude() / max_amp_);
 		return HSL_to_RGB__(H, L, 100.0);
 	}
 
 
 	ComplxPhaseClr::ComplxPhaseClr() : cl_map_(clrGlacier__) {}
 
-	RGB ComplxPhaseClr::operator()(Complex c_) const {
-		return cl_map_(c_.phase() / (2.0 * Pi));
+	RGB ComplxPhaseClr::operator()(Complex C_) const {
+		return cl_map_(C_.phase() / (2.0 * Pi));
 	}
 
 	

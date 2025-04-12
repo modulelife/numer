@@ -59,12 +59,12 @@ namespace numer {
 			return diff_ / idm_;
 		}
 
-		bool verifyAndIndex(double Coord_, size_t& Idx_Var_) const {
+		bool verifyAndIndex(double Coord_, size_t& Idx_var_) const {
 			if(diff_ == 0.0) return false;
 			double off = Coord_ - start_;
 			if (off < 0.0 || off > diff_) return false;
 			double idx = idm_ * off / diff_;
-			Idx_Var_ = static_cast<size_t>(idx + 0.5);
+			Idx_var_ = static_cast<size_t>(idx + 0.5);
 			return true;
 		}
 	};
@@ -85,8 +85,8 @@ namespace numer {
 			return func_(to_domain_(Idx_));
 		}
 
-		double stepOfDim(unsigned Which_Dim_) const { 
-			if (Which_Dim_ == 0) return to_domain_.step();
+		double stepOfDim(unsigned Which_dim_) const { 
+			if (Which_dim_ == 0) return to_domain_.step();
 			return 0.0;
 		}
 
@@ -111,9 +111,9 @@ namespace numer {
 			return func_(to_domain1_(Idx1_), to_domain2_(Idx2_));
 		}
 
-		double stepOfDim(unsigned Which_Dim_) const {
-			if (Which_Dim_ == 0) return to_domain1_.step();
-			if (Which_Dim_ == 1) return to_domain2_.step();
+		double stepOfDim(unsigned Which_dim_) const {
+			if (Which_dim_ == 0) return to_domain1_.step();
+			if (Which_dim_ == 1) return to_domain2_.step();
 			return 0.0;
 		}
 
@@ -139,10 +139,10 @@ namespace numer {
 			return func_(to_domain1_(Idx1_), to_domain2_(Idx2_), to_domain3_(Idx3_));
 		}
 
-		double stepOfDim(unsigned Which_Dim_) const {
-			if (Which_Dim_ == 0) return to_domain1_.step();
-			if (Which_Dim_ == 1) return to_domain2_.step();
-			if (Which_Dim_ == 2) return to_domain3_.step();
+		double stepOfDim(unsigned Which_dim_) const {
+			if (Which_dim_ == 0) return to_domain1_.step();
+			if (Which_dim_ == 1) return to_domain2_.step();
+			if (Which_dim_ == 2) return to_domain3_.step();
 			return 0.0;
 		}
 

@@ -17,7 +17,45 @@ namespace numer { class Complex; }
 namespace numer {
 
 
-	struct RGB { uint8_t R; uint8_t G; uint8_t B; };
+	struct RGB { uint8_t R, G, B; };
+	struct RGBA { uint8_t R, G, B, A; };
+
+	constexpr RGBA attachAlpha(uint8_t A_, RGB Clr_) {
+		return RGBA{ Clr_.R, Clr_.G, Clr_.B, A_ };
+	}
+
+	constexpr RGB removeAlpha(RGBA Clr_) {
+		return RGB{ Clr_.R, Clr_.G, Clr_.B};
+	}
+
+	constexpr RGBA mixAlpha(RGBA Lower_, RGBA Upper_) {
+
+		const float upperA = static_cast<float>(Upper_.A) / 255.0f;
+		const float lowerA = static_cast<float>(Lower_.A) / 255.0f;
+
+		const float resultA = upperA + lowerA * (1.0f - upperA);
+
+		const auto computeChannel = [&](uint8_t upperC, uint8_t lowerC) -> uint8_t {
+			const float upperC_norm = static_cast<float>(upperC) / 255.0f;
+			const float lowerC_norm = static_cast<float>(lowerC) / 255.0f;
+
+			const float blended =
+				(upperC_norm * upperA) +
+				(lowerC_norm * lowerA) * (1.0f - upperA);
+
+			const float final = (resultA > 0.0f) ? (blended / resultA) : 0.0f;
+
+			return static_cast<uint8_t>(final * 255.0f + 0.5f);
+		};
+
+		const uint8_t R = computeChannel(Upper_.R, Lower_.R);
+		const uint8_t G = computeChannel(Upper_.G, Lower_.G);
+		const uint8_t B = computeChannel(Upper_.B, Lower_.B);
+
+		const uint8_t A = static_cast<uint8_t>(resultA * 255.0f + 0.5f);
+
+		return RGBA{ R, G, B, A };
+	}
 
 
 	//X should stay within [0, 1]
@@ -65,7 +103,7 @@ namespace numer {
 	private:
 		NormalizedColorMap cl_map_;
 	public:
-		ReverseColor(NormalizedColorMap Color_Map_) : cl_map_(Color_Map_) {}
+		ReverseColor(NormalizedColorMap Color_map_) : cl_map_(Color_map_) {}
 
 		RGB operator()(double x_) const {
 			return cl_map_(1.0 - x_);
@@ -98,8 +136,8 @@ namespace numer {
 		NormalizedColorMap cl_map_;
 	public:
 		LinearHeatMap();
-		LinearHeatMap(double Minimum_, double Maximum_, NormalizedColorMap Color_Map_)
-			: min_thrs_(Minimum_), max_thrs_(Maximum_), cl_map_(Color_Map_)
+		LinearHeatMap(double Minimum_, double Maximum_, NormalizedColorMap Color_map_)
+			: min_thrs_(Minimum_), max_thrs_(Maximum_), cl_map_(Color_map_)
 		{}
 
 		double getMinThreshold() const { return min_thrs_; }
@@ -116,8 +154,8 @@ namespace numer {
 		NormalizedColorMap cl_map_;
 	public:
 		LogthmHeatMap();
-		LogthmHeatMap(double Minimum_, double Maximum_, NormalizedColorMap Color_Map_)
-			: min_thrs_(Minimum_), max_thrs_(Maximum_), cl_map_(Color_Map_)
+		LogthmHeatMap(double Minimum_, double Maximum_, NormalizedColorMap Color_map_)
+			: min_thrs_(Minimum_), max_thrs_(Maximum_), cl_map_(Color_map_)
 		{}
 
 		double getMinThreshold() const { return min_thrs_; }
@@ -134,8 +172,8 @@ namespace numer {
 		NormalizedColorMap cl_map_;
 	public:
 		CompressedHeatMap();
-		CompressedHeatMap(double Minimum_, double Maximum_, NormalizedColorMap Color_Map_)
-			: min_thrs_(Minimum_), max_thrs_(Maximum_), cl_map_(Color_Map_)
+		CompressedHeatMap(double Minimum_, double Maximum_, NormalizedColorMap Color_map_)
+			: min_thrs_(Minimum_), max_thrs_(Maximum_), cl_map_(Color_map_)
 		{
 		}
 
@@ -152,15 +190,15 @@ namespace numer {
 	public:
 		ComplxRainbowClr(): max_amp_(10.0) 
 		{}
-		ComplxRainbowClr(double Max_Amplitude_)
-			: max_amp_(Max_Amplitude_)
+		ComplxRainbowClr(double Max_amplitude_)
+			: max_amp_(Max_amplitude_)
 		{}
 
 		double getMinThreshold() const { return 0.0; }
 		double getMaxThreshold() const { return max_amp_; }
 		void setMinThreshold(double Minimum_) {}
-		void setMaxThreshold(double Max_Amplitude_) { max_amp_ = Max_Amplitude_; }
-		RGB operator()(Complex c_) const;
+		void setMaxThreshold(double Max_amplitude_) { max_amp_ = Max_amplitude_; }
+		RGB operator()(Complex C_) const;
 	};
 
 	class ComplxPhaseClr {
@@ -168,14 +206,14 @@ namespace numer {
 		NormalizedColorMap cl_map_;
 	public:
 		ComplxPhaseClr();
-		ComplxPhaseClr(NormalizedColorMap Color_Map_) : cl_map_(Color_Map_)
+		ComplxPhaseClr(NormalizedColorMap Color_map_) : cl_map_(Color_map_)
 		{}
 
 		double getMinThreshold() const { return 0.0; }
 		double getMaxThreshold() const { return 2.0 * Pi; }
 		void setMinThreshold(double Minimum_) {}
 		void setMaxThreshold(double Maximum_) {}
-		RGB operator()(Complex c_) const;
+		RGB operator()(Complex C_) const;
 	};
 
 

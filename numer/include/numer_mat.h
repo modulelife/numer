@@ -1404,7 +1404,7 @@ namespace numer {
 		}
 
 		//move assignment
-		mat<Ty, Alloc>& operator=(mat<Ty, Alloc>&& Right_) {
+		mat<Ty, Alloc>& operator=(mat<Ty, Alloc>&& Right_) noexcept {
 			deallocate_();
 			nrows_ = Right_.nrows_;
 			ncols_ = Right_.ncols_;
@@ -1581,13 +1581,16 @@ namespace numer {
 		template<class EntrywiseConverter, typename Tx, class Allocx>
 		static mat<Ty, Alloc> creat_par(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_);
 
-		//refill the mat with a Generate
-		template<class EntrywiseGenerator>
-		static mat<Ty, Alloc> refill(EntrywiseGenerator&& Generate_);
+		//refill the mat with a new value
+		void set_all_to(const Ty& Value_);
 
 		//refill the mat with a Generate
 		template<class EntrywiseGenerator>
-		static mat<Ty, Alloc> refill_par(EntrywiseGenerator&& Generate_);
+		void refill(EntrywiseGenerator&& Generate_);
+
+		//refill the mat with a Generate
+		template<class EntrywiseGenerator>
+		void refill_par(EntrywiseGenerator&& Generate_);
 
 		//select entries in range [R1, R2) X [C1, C2), returning a new mat
 		mat<Ty, Alloc> select_range(size_t R1_, size_t R2_, size_t C1_, size_t C2_) const noexcept(false);
@@ -1604,11 +1607,11 @@ namespace numer {
 		//if range is invalid, no changes will be made, thus "noexcept"
 		//Mixer should be any callable object with signature " Ty (const Ty&, const Ty&) "
 		template<class Mixer>
-		void overlay(const mat<Ty, Alloc>& Patch_, Mixer&& Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept;
+		void overlay(const mat<Ty, Alloc>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept;
 
 		//overlay method for all compatible types, Mixer : any callable " Ty (const Ty&, const Tx&) "
 		template<class Mixer, typename Tx, class Allocx>
-		void overlay(const mat<Tx, Allocx>& Patch_, Mixer&& Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept;
+		void overlay(const mat<Tx, Allocx>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept;
 
 		//overlay method dedicated for patch of the same shape
 		template<class Mixer>
@@ -1726,8 +1729,18 @@ namespace numer {
 	}
 
 	template<typename Ty, class Alloc>
+	void mat<Ty, Alloc>::set_all_to(const Ty& Value_)
+	{
+		Ty* iter = mem_begin_();
+		for (size_t i = 0; i < count_(); ++i)
+		{
+			*iter++ = Value_;
+		}
+	}
+
+	template<typename Ty, class Alloc>
 	template<class EntrywiseGenerator>
-	mat<Ty, Alloc> mat<Ty, Alloc>::refill(EntrywiseGenerator&& Generate_)
+	void mat<Ty, Alloc>::refill(EntrywiseGenerator&& Generate_)
 	{
 		Ty* iter = mem_begin_();
 		const size_t rows = nrows(), cols = ncols();
@@ -1741,7 +1754,7 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class EntrywiseGenerator>
-	mat<Ty, Alloc> mat<Ty, Alloc>::refill_par(EntrywiseGenerator&& Generate_)
+	void mat<Ty, Alloc>::refill_par(EntrywiseGenerator&& Generate_)
 	{
 		using args__ = struct { Ty* row_begin__; size_t i__; };
 
@@ -1800,17 +1813,17 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class Mixer>
-	void mat<Ty, Alloc>::overlay(const mat<Ty, Alloc>& Patch_, Mixer&& Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept
+	void mat<Ty, Alloc>::overlay(const mat<Ty, Alloc>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept
 	{
 		size_t rows = Patch_.nrows();
 		size_t cols = Patch_.ncols();
 
-		if (Row_Pos_ + rows > nrows() || Col_Pos_ + cols > ncols()) return;
+		if (Row_pos_ + rows > nrows() || Col_pos_ + cols > ncols()) return;
 
 		const Ty* patch_iter = Patch_.mem_begin_();
 		for (size_t i = 0; i < rows; ++i)
 		{
-			Ty* iter = mem_begin_() + (i + Row_Pos_) * ncols() + Col_Pos_;
+			Ty* iter = mem_begin_() + (i + Row_pos_) * ncols() + Col_pos_;
 			for (size_t j = 0; j < cols; ++j)
 			{
 				*iter = Mix_(*iter, *patch_iter++);
@@ -1821,17 +1834,17 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class Mixer, typename Tx, class Allocx>
-	void mat<Ty, Alloc>::overlay(const mat<Tx, Allocx>& Patch_, Mixer&& Mix_, size_t Row_Pos_, size_t Col_Pos_) noexcept
+	void mat<Ty, Alloc>::overlay(const mat<Tx, Allocx>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept
 	{
 		size_t rows = Patch_.nrows();
 		size_t cols = Patch_.ncols();
 
-		if (Row_Pos_ + rows > nrows() || Col_Pos_ + cols > ncols()) return;
+		if (Row_pos_ + rows > nrows() || Col_pos_ + cols > ncols()) return;
 
 		const Tx* patch_iter = Patch_.mem_begin_();
 		for (size_t i = 0; i < rows; ++i)
 		{
-			Ty* iter = mem_begin_() + (i + Row_Pos_) * ncols() + Col_Pos_;
+			Ty* iter = mem_begin_() + (i + Row_pos_) * ncols() + Col_pos_;
 			for (size_t j = 0; j < cols; ++j)
 			{
 				*iter = Mix_(*iter, *patch_iter++);

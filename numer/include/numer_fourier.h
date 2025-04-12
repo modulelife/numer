@@ -70,7 +70,7 @@ namespace numer {
                 }
             }
 
-            // in-place rearranment, good for cache hit
+            // in-place rearrangement, good for cache hit
             for (size_t i = 0; i < len_; ++i) {
                 size_t rev = pos[i];
                 if (i < rev) std::swap(seq_cplx_[i], seq_cplx_[rev]);
@@ -169,28 +169,28 @@ namespace numer {
     //in-place FFT
     //normalize factor N^0.5 for FT and IFT
     template<class Array>
-    inline void fft_ortho(Array&& Seq_Complx_, const size_t Len_)
+    inline void fft_ortho(Array&& Seq_complx_, const size_t Len_)
     {
-        if (is_pow2(Len_)) detail_::fft_radix2__<false>(Seq_Complx_, Len_);
-        else detail_::fft_bluestein__<false>(Seq_Complx_, Len_);
+        if (is_pow2(Len_)) detail_::fft_radix2__<false>(Seq_complx_, Len_);
+        else detail_::fft_bluestein__<false>(Seq_complx_, Len_);
         double normalizer = sqrt(Len_);
 #pragma omp simd
         for (size_t i = 0; i < Len_; ++i) {
-            Seq_Complx_[i] /= normalizer;
+            Seq_complx_[i] /= normalizer;
         }
     }
 
     //in-place FFT
     //normalize factor N^0.5 for FT and IFT
     template<class Array>
-    inline void ifft_ortho(Array&& Seq_Complx_, const size_t Len_)
+    inline void ifft_ortho(Array&& Seq_complx_, const size_t Len_)
     {
-        if (is_pow2(Len_)) detail_::fft_radix2__<true>(Seq_Complx_, Len_);
-        else detail_::fft_bluestein__<true>(Seq_Complx_, Len_);
+        if (is_pow2(Len_)) detail_::fft_radix2__<true>(Seq_complx_, Len_);
+        else detail_::fft_bluestein__<true>(Seq_complx_, Len_);
         double normalizer = sqrt(Len_);
 #pragma omp simd
         for (size_t i = 0; i < Len_; ++i) {
-            Seq_Complx_[i] /= normalizer;
+            Seq_complx_[i] /= normalizer;
         }
     }
 
@@ -198,23 +198,23 @@ namespace numer {
     //in-place FFT
     //normalize factor 1 for FT and N for IFT
     template<class Array>
-    inline void fft(Array&& Seq_Complx_, const size_t Len_)
+    inline void fft(Array&& Seq_complx_, const size_t Len_)
     {
-        if (is_pow2(Len_)) detail_::fft_radix2__<false>(Seq_Complx_, Len_);
-        else detail_::fft_bluestein__<false>(Seq_Complx_, Len_);
+        if (is_pow2(Len_)) detail_::fft_radix2__<false>(Seq_complx_, Len_);
+        else detail_::fft_bluestein__<false>(Seq_complx_, Len_);
     }
 
     //in-place FFT
     //normalize factor 1 for FT and N for IFT
     template<class Array>
-    inline void ifft(Array&& Seq_Complx_, const size_t Len_)
+    inline void ifft(Array&& Seq_complx_, const size_t Len_)
     {
-        if (is_pow2(Len_)) detail_::fft_radix2__<true>(Seq_Complx_, Len_);
-        else detail_::fft_bluestein__<true>(Seq_Complx_, Len_);
+        if (is_pow2(Len_)) detail_::fft_radix2__<true>(Seq_complx_, Len_);
+        else detail_::fft_bluestein__<true>(Seq_complx_, Len_);
         double normalizer = static_cast<double>(Len_);
 #pragma omp simd
         for (size_t i = 0; i < Len_; ++i) {
-            Seq_Complx_[i] /= normalizer;
+            Seq_complx_[i] /= normalizer;
         }
     }
 
@@ -222,7 +222,7 @@ namespace numer {
     //non-mutating FFT
     //normalize factor N^0.5 for FT and IFT
     template<class InIt, class OutIt>
-    inline void fft_ortho(InIt First_, const size_t Len_, OutIt Dest_Complx_)
+    inline void fft_ortho(InIt First_, const size_t Len_, OutIt Dest_complx_)
     {
         std::vector<Complex> seq_buf(Len_);
         for (size_t i = 0; i < Len_; ++i) {
@@ -238,14 +238,14 @@ namespace numer {
         }
 
         for (size_t i = 0; i < Len_; ++i) {
-            *Dest_Complx_++ = seq_buf[i];
+            *Dest_complx_++ = seq_buf[i];
         }
     }
 
     //non-mutating FFT
     //normalize factor N^0.5 for FT and IFT
     template<class InIt, class OutIt>
-    inline void ifft_ortho(InIt First_, const size_t Len_, OutIt Dest_Complx_)
+    inline void ifft_ortho(InIt First_, const size_t Len_, OutIt Dest_complx_)
     {
         std::vector<Complex> seq_buf(Len_);
         for (size_t i = 0; i < Len_; ++i) {
@@ -261,7 +261,7 @@ namespace numer {
         }
 
         for (size_t i = 0; i < Len_; ++i) {
-            *Dest_Complx_++ = seq_buf[i];
+            *Dest_complx_++ = seq_buf[i];
         }
     }
 
@@ -269,7 +269,7 @@ namespace numer {
     //non-mutating FFT
     //normalize factor 1 for FT and N for IFT
     template<class InIt, class OutIt>
-    inline void fft(InIt First_, const size_t Len_, OutIt Dest_Complx_)
+    inline void fft(InIt First_, const size_t Len_, OutIt Dest_complx_)
     {
         std::vector<Complex> seq_buf(Len_);
         for (size_t i = 0; i < Len_; ++i) {
@@ -280,14 +280,14 @@ namespace numer {
         else detail_::fft_bluestein__<false>(seq_buf, Len_);
 
         for (size_t i = 0; i < Len_; ++i) {
-            *Dest_Complx_++ = seq_buf[i];
+            *Dest_complx_++ = seq_buf[i];
         }
     }
 
     //non-mutating FFT
     //normalize factor 1 for FT and N for IFT
     template<class InIt, class OutIt>
-    inline void ifft(InIt First_, const size_t Len_, OutIt Dest_Complx_)
+    inline void ifft(InIt First_, const size_t Len_, OutIt Dest_complx_)
     {
         std::vector<Complex> seq_buf(Len_);
         for (size_t i = 0; i < Len_; ++i) {
@@ -303,7 +303,7 @@ namespace numer {
         }
 
         for (size_t i = 0; i < Len_; ++i) {
-            *Dest_Complx_++ = seq_buf[i];
+            *Dest_complx_++ = seq_buf[i];
         }
     }
 
@@ -311,10 +311,10 @@ namespace numer {
 	//in-place FFT for 2d complex field in mat<Complex>
     //normalize factor N^0.5 for FT and IFT
     template<class Alloc__>
-    inline void fft2d_ortho_par(mat<Complex, Alloc__>& Field_Complx_)
+    inline void fft2d_ortho_par(mat<Complex, Alloc__>& Field_complx_)
     {
-        size_t X = Field_Complx_.ncols();
-        size_t Y = Field_Complx_.nrows();
+        size_t X = Field_complx_.ncols();
+        size_t Y = Field_complx_.nrows();
         std::vector<size_t> argsx(Y);
         std::vector<size_t> argsy(X);
 
@@ -326,18 +326,18 @@ namespace numer {
         }
 
         std::for_each_n(std::execution::par, argsx.begin(), Y,
-            [&](size_t id) { fft_ortho(Field_Complx_[id], X); });
+            [&](size_t id) { fft_ortho(Field_complx_[id], X); });
         std::for_each_n(std::execution::par, argsy.begin(), X,
-            [&](size_t id) { fft_ortho(Field_Complx_.col(id).begin(), Y); });
+            [&](size_t id) { fft_ortho(Field_complx_.col(id).begin(), Y); });
     }
 
     //in-place FFT for 2d complex field in mat<Complex>
     //normalize factor N^0.5 for FT and IFT
     template<class Alloc__>
-    inline void ifft2d_ortho_par(mat<Complex, Alloc__>& Field_Complx_)
+    inline void ifft2d_ortho_par(mat<Complex, Alloc__>& Field_complx_)
     {
-        size_t X = Field_Complx_.ncols();
-        size_t Y = Field_Complx_.nrows();
+        size_t X = Field_complx_.ncols();
+        size_t Y = Field_complx_.nrows();
         std::vector<size_t> argsx(Y);
         std::vector<size_t> argsy(X);
 
@@ -349,18 +349,18 @@ namespace numer {
         }
 
         std::for_each_n(std::execution::par, argsx.begin(), Y,
-            [&](size_t id) { ifft_ortho(Field_Complx_[id], X); });
+            [&](size_t id) { ifft_ortho(Field_complx_[id], X); });
         std::for_each_n(std::execution::par, argsy.begin(), X,
-            [&](size_t id) { ifft_ortho(Field_Complx_.col(id).begin(), Y); });
+            [&](size_t id) { ifft_ortho(Field_complx_.col(id).begin(), Y); });
     }
 
     //in-place FFT for 2d complex field in mat<Complex>
     //normalize factor 1 for FT and N for IFT
     template<class Alloc__>
-    inline void fft2d_par(mat<Complex, Alloc__>& Field_Complx_)
+    inline void fft2d_par(mat<Complex, Alloc__>& Field_complx_)
     {
-        size_t X = Field_Complx_.ncols();
-        size_t Y = Field_Complx_.nrows();
+        size_t X = Field_complx_.ncols();
+        size_t Y = Field_complx_.nrows();
         std::vector<size_t> argsx(Y);
         std::vector<size_t> argsy(X);
 
@@ -372,18 +372,18 @@ namespace numer {
         }
 
         std::for_each_n(std::execution::par, argsx.begin(), Y,
-            [&](size_t id) { fft(Field_Complx_[id], X); });
+            [&](size_t id) { fft(Field_complx_[id], X); });
         std::for_each_n(std::execution::par, argsy.begin(), X,
-            [&](size_t id) { fft(Field_Complx_.col(id).begin(), Y); });
+            [&](size_t id) { fft(Field_complx_.col(id).begin(), Y); });
     }
 
     //in-place FFT for 2d complex field in mat<Complex>
     //normalize factor 1 for FT and N for IFT
     template<class Alloc__>
-    inline void ifft2d_par(mat<Complex, Alloc__>& Field_Complx_)
+    inline void ifft2d_par(mat<Complex, Alloc__>& Field_complx_)
     {
-        size_t X = Field_Complx_.ncols();
-        size_t Y = Field_Complx_.nrows();
+        size_t X = Field_complx_.ncols();
+        size_t Y = Field_complx_.nrows();
         std::vector<size_t> argsx(Y);
         std::vector<size_t> argsy(X);
 
@@ -395,9 +395,9 @@ namespace numer {
         }
 
         std::for_each_n(std::execution::par, argsx.begin(), Y,
-            [&](size_t id) { ifft(Field_Complx_[id], X); });
+            [&](size_t id) { ifft(Field_complx_[id], X); });
         std::for_each_n(std::execution::par, argsy.begin(), X,
-            [&](size_t id) { ifft(Field_Complx_.col(id).begin(), Y); });
+            [&](size_t id) { ifft(Field_complx_.col(id).begin(), Y); });
     }
 
 
