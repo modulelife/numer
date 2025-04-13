@@ -150,7 +150,7 @@ namespace numer {
 		}
 
 		template<class Array, class EntrywiseConverter, typename Ty>
-		Histogram& drawData(Array&& Ary_, size_t N_, EntrywiseConverter&& To_real_, const std::function<RGB(Ty)>& Colorizer_) {
+		Histogram& drawData(Array&& Ary_, size_t N_, EntrywiseConverter&& To_real_, const std::function<RGB(Ty)>& Colorize_) {
 			if (N_ == 0) return *this;
 			RangeSampler range(RangeSpec{ min_, max_, hght_ - 1 });
 			RangeSampler idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ - 1 });
@@ -182,7 +182,7 @@ namespace numer {
 					t = xaxis_ypos;
 				}
 				
-				RGBA line_clr = attachAlpha(line_clr_.A, Colorizer_(Ary_[idxer(i)]));
+				RGBA line_clr = attachAlpha(line_clr_.A, Colorize_(Ary_[idxer(i)]));
 				for (size_t j = s; j <= t; ++j) {
 					rawimg_[hght_ - 1 - j][i] = mixAlpha(rawimg_[hght_ - 1 - j][i], line_clr);
 				}
@@ -208,6 +208,57 @@ namespace numer {
 
 
 	};
+
+
+	class HeatMapPlot {
+	private:
+		const size_t hght_;
+		const size_t wdth_;
+
+	public:
+		HeatMapPlot(size_t Height_, size_t Width_)
+			:hght_(Height_), wdth_(Width_)
+		{}
+
+		template<class Array, typename Ty>
+		mat<RGB> renderImage(Array Ary_, size_t N_, const std::function<RGB(Ty)> Colorize_) {
+			std::vector<RGB> ary_vs(N_);
+			for (size_t i = 0; i < N_; ++i) {
+				ary_vs[i] = Colorize_(Ary_[i]);
+			}
+
+			RangeSampler x_idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ - 1 });
+			mat<RGB> plot_img(hght_, wdth_);
+			for (size_t i = 0; i < hght_; ++i) {
+				for (size_t j = 0; j < wdth_; ++j) {
+					plot_img[i][j] = ary_vs[x_idxer(j)];
+				}
+			}
+			return plot_img;
+		}
+
+		template<class Mat, typename Ty>
+		mat<RGB> renderImage(Mat Mat_, size_t Nrow_, size_t Ncol_, const std::function<RGB(Ty)> Colorize_) {
+			mat<RGB> mat_vs(Nrow_, Ncol_);
+			for (size_t i = 0; i < Nrow_; ++i) {
+				for (size_t j = 0; j < Ncol_; ++j) {
+					mat_vs[i][j] = Colorize_(Mat_[i][j]);
+				}
+			}
+
+			RangeSampler x_idxer(RangeSpec{ 0, static_cast<double>(Ncol_ - 1), wdth_ - 1 });
+			RangeSampler y_idxer(RangeSpec{ 0, static_cast<double>(Nrow_ - 1), hght_ - 1 });
+			mat<RGB> plot_img(hght_, wdth_);
+			for (size_t i = 0; i < hght_; ++i) {
+				for (size_t j = 0; j < wdth_; ++j) {
+					plot_img[hght_ - 1 - i][j] = mat_vs[static_cast<size_t>(y_idxer(j))][static_cast<size_t>(x_idxer(i))];
+				}
+			}
+			return plot_img;
+		}
+
+	};
+
 
 }//namespace numer end
 

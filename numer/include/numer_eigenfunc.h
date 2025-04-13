@@ -25,19 +25,7 @@ namespace numer {
 
 	namespace detail_ {
 
-		inline double factorial__(unsigned N_) {
-
-			static const double kFactorials[21] = {
-				1., 1., 2., 6., 24., 120., 720., 5040., 40320., 362880., 3628800.,
-				39916800., 479001600., 6227020800., 87178291200., 1307674368000.,
-				20922789888000., 355687428096000., 6402373705728000.,
-				121645100408832000., 2432902008176640000.
-			};
-
-			if (N_ <= 20) return kFactorials[N_];
-			double x = static_cast<double>(N_);
-			return exp(0.5 * log(2.0 * Pi * x) + x * log(x) - x + 1.0 / (12.0 * x));
-		}
+		
 
 	}//namespace detail end
 
@@ -72,7 +60,7 @@ namespace numer {
 		HermiFunc(unsigned N_, double Beta_)
 			: hn_(N_), beta_(Beta_)
 		{
-			coef_ = pow(beta_ * beta_ / Pi, 0.25) / sqrt(pow(2.0, N_) * detail_::factorial__(N_));
+			coef_ = pow(beta_ * beta_ / Pi, 0.25) / sqrt(pow(2.0, N_) * factorial(N_));
 		}
 
 		double operator()(double X_) {
