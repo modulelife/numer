@@ -34,6 +34,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <memory>
+#include <utility>
 #include <algorithm>
 #include <execution>
 #include <vector>
@@ -1310,19 +1311,40 @@ namespace numer {
 		Ty*				data_;
 		size_t			nrows_;
 		size_t			ncols_;
+		Alloc			allocator_;
 
 
 		Ty* allocate_(size_t n_) {
-			Ty* p = Alloc().allocate(n_);
+			if (n_ == 0) return nullptr;
+			Ty* p = allocator_.allocate(n_);
 			return p;
 		}
 
-		void deallocate_() {
-			if (data_ != nullptr) Alloc().deallocate(data_, count_());
+		Ty* allocate_and_construct_(size_t n_) {
+			if (n_ == 0) return nullptr;
+
+			Ty* p = allocator_.allocate(n_);
+			try {
+				std::uninitialized_default_construct_n(p, n_);
+			}
+			catch (...) {
+				allocator_.deallocate(p, n_);
+				throw;
+			}
+			return p;
+		}
+
+		void destroy_and_deallocate_() {
+			if (data_ != nullptr) {
+				std::destroy_n(data_, count_());
+				allocator_.deallocate(data_, count_());
+				data_ = nullptr;
+			}
 		}
 
 		Ty* allocate_and_fill_(size_t n_, const Ty& Value_) {
-			Ty* p = Alloc().allocate(n_);
+			if (n_ == 0) return nullptr;
+			Ty* p = allocator_.allocate(n_);
 			std::uninitialized_fill_n(p, n_, Value_);
 			return p;
 		}
@@ -1354,25 +1376,25 @@ namespace numer {
 
 
 		//default ctor
-		mat() : nrows_(0), ncols_(0), data_(nullptr) {}
+		mat() : nrows_(0), ncols_(0), data_(nullptr), allocator_() {}
 
 		//ctor specifying initial size
 		mat(const size_t Rows_, const size_t Cols_)
-			: nrows_(Rows_), ncols_(Cols_)
+			: nrows_(Rows_), ncols_(Cols_), data_(nullptr), allocator_()
 		{
-			data_ = allocate_(count_());
+			data_ = allocate_and_construct_(count_());
 		}
 
 		//ctor specifying initial size & element value
 		mat(const size_t Rows_, const size_t Cols_, const Ty& Value_)
-			:nrows_(Rows_), ncols_(Cols_)
+			:nrows_(Rows_), ncols_(Cols_), data_(nullptr), allocator_()
 		{
 			data_ = allocate_and_fill_(count_(), Value_);
 		}
 
 		//copy ctor
 		mat(const mat<Ty, Alloc>& Right_) noexcept
-			:nrows_(Right_.nrows()), ncols_(Right_.ncols())
+			:nrows_(Right_.nrows()), ncols_(Right_.ncols()), data_(nullptr), allocator_(Right_.allocator_)
 		{
 			data_ = allocate_(count_());
 			std::uninitialized_copy_n(Right_.mem_begin_(), count_(), mem_begin_());
@@ -1380,23 +1402,33 @@ namespace numer {
 
 		//dtor
 		~mat() {
-			deallocate_();
+			destroy_and_deallocate_();
+			nrows_ = 0;
+			ncols_ = 0;
 		}
 
 		//assignment
 		mat<Ty, Alloc>& operator=(const mat<Ty, Alloc>& Right_) {
-			if (mem_begin_() == Right_.mem_begin_()) return *this;
-			deallocate_();
-			nrows_ = Right_.nrows();
-			ncols_ = Right_.ncols();
-			data_ = allocate_(count_());
-			std::uninitialized_copy_n(Right_.mem_begin_(), count_(), mem_begin_());
+			if (this == &Right_) return *this;
+			Ty* new_data = allocate_(Right_.count_());
+			try {
+				std::uninitialized_copy_n(Right_.mem_begin_(), Right_.count_(),new_data);
+			}
+			catch (...) {
+				allocator_.deallocate(new_data, Right_.count_());
+				throw;
+			}
+
+			destroy_and_deallocate_();
+			nrows_ = Right_.nrows_;
+			ncols_ = Right_.ncols_;
+			data_ = new_data;
 			return *this;
 		}
 
 		//move ctor
 		mat(mat<Ty, Alloc>&& Right_) noexcept
-			:nrows_(Right_.nrows_), ncols_(Right_.ncols_), data_(Right_.data_)
+			:nrows_(Right_.nrows_), ncols_(Right_.ncols_), data_(Right_.data_), allocator_(std::move(Right_.allocator_))
 		{
 			Right_.data_ = nullptr;
 			Right_.nrows_ = 0;
@@ -1405,10 +1437,13 @@ namespace numer {
 
 		//move assignment
 		mat<Ty, Alloc>& operator=(mat<Ty, Alloc>&& Right_) noexcept {
-			deallocate_();
+			if (this == &Right_) return *this; 
+			destroy_and_deallocate_();
 			nrows_ = Right_.nrows_;
 			ncols_ = Right_.ncols_;
 			data_ = Right_.data_;
+			allocator_ = std::move(Right_.allocator_);
+
 			Right_.data_ = nullptr;
 			Right_.nrows_ = 0;
 			Right_.ncols_ = 0;
@@ -1417,36 +1452,27 @@ namespace numer {
 
 		//clear content
 		void clear() {
-			deallocate_();
-			data_ = nullptr;
+			destroy_and_deallocate_();
 			nrows_ = 0;
 			ncols_ = 0;
 		}
 
 		//static swap
 		static void swap(mat<Ty, Alloc>& Mat_X_, mat<Ty, Alloc>& Mat_Y_) {
-			size_t rt = Mat_X_.nrows_;
-			size_t ct = Mat_X_.ncols_;
-			Ty* pt = Mat_X_.data_;
-			Mat_X_.nrows_ = Mat_Y_.nrows_;
-			Mat_X_.ncols_ = Mat_Y_.ncols_;
-			Mat_X_.data_ = Mat_Y_.data_;
-			Mat_Y_.nrows_ = rt;
-			Mat_Y_.ncols_ = ct;
-			Mat_Y_.data_ = pt;
+			using std::swap;
+			swap(Mat_X_.nrows_, Mat_Y_.nrows_);
+			swap(Mat_X_.ncols_, Mat_Y_.ncols_);
+			swap(Mat_X_.data_, Mat_Y_.data_);
+			swap(Mat_X_.allocator_, Mat_Y_.allocator_);
 		}
 
 		//swap
 		void swap(mat<Ty, Alloc>& Right_) {
-			size_t rt = nrows_;
-			size_t ct = ncols_;
-			Ty* pt = data_;
-			nrows_ = Right_.nrows_;
-			ncols_ = Right_.ncols_;
-			data_ = Right_.data_;
-			Right_.nrows_ = rt;
-			Right_.ncols_ = ct;
-			Right_.data_ = pt;
+			using std::swap;
+			swap(nrows_, Right_.nrows_);
+			swap(ncols_, Right_.ncols_);
+			swap(data_, Right_.data_);
+			swap(allocator_, Right_.allocator_);
 		}
 
 		//number of rows

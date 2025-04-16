@@ -90,7 +90,7 @@ namespace numer {
 			return 0.0;
 		}
 
-		double lineElem() const {
+		double diffElem() const {
 			return to_domain_.step();
 		}
 	};
@@ -117,7 +117,7 @@ namespace numer {
 			return 0.0;
 		}
 
-		double panlElem() const {
+		double diffElem() const {
 			return to_domain1_.step() * to_domain2_.step();
 		}
 	};
@@ -146,7 +146,7 @@ namespace numer {
 			return 0.0;
 		}
 
-		double volElem() const {
+		double diffElem() const {
 			return to_domain1_.step() * to_domain2_.step() * to_domain3_.step();
 		}
 	};

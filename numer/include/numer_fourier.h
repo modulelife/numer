@@ -400,6 +400,29 @@ namespace numer {
             [&](size_t id) { ifft(Field_complx_.col(id).begin(), Y); });
     }
 
+    template<class Alloc__>
+    inline void centralize(mat<Complex, Alloc__>& Spectr) {
+
+        size_t X = Spectr.ncols();
+        size_t Y = Spectr.nrows();
+        mat<Complex, Alloc__> xcentered(Y, X);
+        for (size_t i = 0; i < Y; ++i) {
+            auto src = Spectr.row(i).ccycle_from(X / 2);
+            auto des = xcentered.row(i).begin();
+            for (size_t j = 0; j < X; ++j) {
+                *des++ = *src++;
+            }
+        }
+
+        for (size_t j = 0; j < X; ++j) {
+            auto src = xcentered.col(j).ccycle_from(Y / 2);
+            auto des = Spectr.col(j).begin();
+            for (size_t i = 0; i < Y; ++i) {
+                *des++ = *src++;
+            }
+        }
+    }
+
 
 }//namespace numer end
 
