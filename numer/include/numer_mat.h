@@ -122,7 +122,7 @@ namespace numer {
 			return self(ptr_ - Off_);
 		}
 
-		difference_type operator-(self& Right_) const noexcept {
+		difference_type operator-(const self& Right_) const noexcept {
 			return static_cast<difference_type>(ptr_ - Right_.ptr_);
 		}
 
@@ -234,7 +234,7 @@ namespace numer {
 			return self(ptr_ - Off_);
 		}
 
-		difference_type operator-(self& Right_) const noexcept {
+		difference_type operator-(const self& Right_) const noexcept {
 			return static_cast<difference_type>(ptr_ - Right_.ptr_);
 		}
 
