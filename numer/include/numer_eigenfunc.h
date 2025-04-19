@@ -14,6 +14,7 @@
 //----------------------------content begins----------------------------
 
 #include <cmath>
+#include <exception>
 #include <numer_complex.h>
 #include <numer_common.h>
 
@@ -33,6 +34,7 @@ namespace numer {
 	class HermiPolyno {
 	private:
 		const unsigned n_;
+
 	public:
 		HermiPolyno(unsigned Order_) : n_(Order_) {}
 
@@ -56,6 +58,7 @@ namespace numer {
 		HermiPolyno hn_;
 		double beta_;
 		double coef_;
+
 	public:
 		HermiFunc(unsigned N_, double Beta_)
 			: hn_(N_), beta_(Beta_)
@@ -92,6 +95,7 @@ namespace numer {
 		Complex coef_;
 		double p_over_hbar_;
 		double center_;
+
 	public:
 		CoherentState1D(Complex Alpha_, double Beta_)
 			:alpha_(Alpha_), beta_(Beta_) 
@@ -119,6 +123,54 @@ namespace numer {
 
 		Complex operator()(double X_, double Y_) const {
 			return phiax_(X_) * phiay_(Y_);
+		}
+	};
+
+
+	class AssoLaguerrePolyno {
+	private:
+		const double a_;
+		const unsigned n_;
+
+	public:
+		AssoLaguerrePolyno(unsigned Alpha_, unsigned Order_) : a_(static_cast<double>(Alpha_)), n_(Order_) {}
+
+		double operator()(double X_) const {
+			if (n_ == 0) return 1.0;
+			if (n_ == 1) return a_ + 1.0 - X_;
+
+			double lak_2 = 1.0, lak_1 = a_ + 1.0 - X_, lak;
+			for (unsigned i = 2; i <= n_; ++i) {
+				double k = static_cast<double>(i);
+				lak = ((2.0 * k + a_ - 1.0 - X_) * lak_1 - (k - 1 + a_) * lak_2) / k;
+				lak_2 = lak_1;
+				lak_1 = lak;
+			}
+			return lak;
+		}
+	};
+
+
+	class HydrogenRadical {
+	private:
+		AssoLaguerrePolyno lan_;
+		unsigned l_;
+		double scale_;
+		double coef_;
+
+	public:
+		HydrogenRadical(unsigned N_, unsigned L_, double Radius_a0_) 
+			: lan_(2 * L_ + 1, N_ - L_ - 1), l_(L_) {
+			if (N_ == 0) throw std::invalid_argument("energy level must be at least 1.");
+			if (N_ <= L_) throw std::invalid_argument("energy level must be greater than angular quantum number.");
+
+			double n = static_cast<double>(N_);
+			scale_ = 1.0 / (n * Radius_a0_);
+			coef_ = sqrt(8.0 * scale_ * scale_ * scale_ / (2.0 * n) * (factorial(N_ - L_ - 1) / factorial(N_ + L_)));
+		}
+
+		double operator()(double R_) const {
+			return coef_ * exp(-R_ * scale_) * pow(2.0 * R_ * scale_, l_) * lan_(2.0 * R_ * scale_);
 		}
 	};
 
