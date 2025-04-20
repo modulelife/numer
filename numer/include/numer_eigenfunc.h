@@ -255,6 +255,21 @@ namespace numer {
 	};
 
 
+	class HydrogenState {
+	private:
+		HydrogenRadical Rnl_;
+		SphericalHarmonic Ylm_;
+
+	public:
+		HydrogenState(unsigned N_, unsigned L_, int M_, double Radius_a0_)
+			: Rnl_(N_, L_, Radius_a0_), Ylm_(L_, M_) {
+		}
+
+		Complex operator()(double R_, double Theta_, double Phi_) const {
+			return Rnl_(R_) * Ylm_(Theta_, Phi_);
+		}
+	};
+
 
 
 

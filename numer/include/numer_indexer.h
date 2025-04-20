@@ -76,7 +76,11 @@ namespace numer {
 	namespace id_order {
 
 		class original {
+		private:
+			size_t idm_;
+
 		public:
+			original(size_t Max_id_) : idm_(Max_id_) {}
 			size_t operator()(size_t Idx_) const {
 				return Idx_;
 			}
@@ -85,6 +89,7 @@ namespace numer {
 		class reverse {
 		private:
 			size_t idm_;
+
 		public:
 			reverse(size_t Max_id_) : idm_(Max_id_) {}
 			size_t operator()(size_t Idx_) const {
@@ -95,6 +100,7 @@ namespace numer {
 		class cyclic {
 		private:
 			size_t idm_;
+
 		public:
 			cyclic(size_t Max_id_) : idm_(Max_id_) {}
 			size_t operator()(size_t Idx_) const {
@@ -103,6 +109,27 @@ namespace numer {
 		};
 	}
 
+
+	template<class AbstractMat>
+	class ImageOrientation {
+	private:
+		AbstractMat& base_;
+		id_order::original xorder_;
+		id_order::reverse yorder_;
+
+	public:
+		ImageOrientation(AbstractMat& Mat_base_, size_t Rows_, size_t Cols_)
+			: base_(Mat_base_), xorder_(Rows_), yorder_(Cols_) {
+		}
+
+		decltype(auto) operator()(size_t Pos1_, size_t Pos2_) {
+			return base_(yorder_(Pos2_), xorder_(Pos1_));
+		}
+
+		decltype(auto) operator()(size_t Pos1_, size_t Pos2_) const {
+			return base_(yorder_(Pos2_), xorder_(Pos1_));
+		}
+	};
 
 
 
