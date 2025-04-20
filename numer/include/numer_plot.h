@@ -14,6 +14,7 @@
 //----------------------------content begins----------------------------
 
 #include <cstddef>
+#include <cmath>
 #include <numer_visualize.h>
 #include <numer_mat.h>
 #include <numer_grid.h>
@@ -82,6 +83,7 @@ namespace numer {
 			size_t val_ypos;
 			for (size_t i = 0; i < wdth_; ++i) {
 				double val = Vec_real_(idxer(i));
+				if (isnan(val)) continue;
 				if (!range.verifyAndIndex(val, val_ypos)) {
 					val_ypos = val > max_ ? hght_ - 1 : 0;
 				}
@@ -123,6 +125,7 @@ namespace numer {
 			size_t val_ypos;
 			for (size_t i = 0; i < wdth_; ++i) {
 				double val = To_real_(Vec_any_(idxer(i)));
+				if (isnan(val)) continue;
 				if (!range.verifyAndIndex(val, val_ypos)) {
 					val_ypos = val > max_ ? hght_ - 1 : 0;
 				}
@@ -164,6 +167,7 @@ namespace numer {
 			size_t val_ypos;
 			for (size_t i = 0; i < wdth_; ++i) {
 				double val = To_real_(Vec_any_(idxer(i)));
+				if (isnan(val)) continue;
 				if (!range.verifyAndIndex(val, val_ypos)) {
 					val_ypos = val > max_ ? hght_ - 1 : 0;
 				}

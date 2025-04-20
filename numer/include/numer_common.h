@@ -64,5 +64,11 @@ namespace numer {
 		return exp(0.5 * log(2.0 * Pi * x) + x * log(x) - x + 1.0 / (12.0 * x));
 	}
 
+	template<typename Uint>
+	inline double parity_u(Uint Integer_) {
+		static_assert(!std::numeric_limits<Uint>::is_signed, "must pass an unsigned type");
+		if (Integer_ % 2U == 0) return 1.0;
+		return -1.0;
+	}
 
 }//namespace numer end

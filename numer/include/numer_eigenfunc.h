@@ -43,8 +43,9 @@ namespace numer {
 			if (n_ == 1) return 2.0 * X_;
 
 			double hn_2 = 1.0, hn_1 = 2.0 * X_, hn;
-			for (unsigned n = 2; n <= n_; ++n) {
-				hn = 2.0 * (X_ * hn_1 - (n - 1) * hn_2);
+			for (unsigned i = 2; i <= n_; ++i) {
+				double n = static_cast<double>(i);
+				hn = 2.0 * (X_ * hn_1 - (n - 1.0) * hn_2);
 				hn_2 = hn_1;
 				hn_1 = hn;
 			}
@@ -142,7 +143,7 @@ namespace numer {
 			double lak_2 = 1.0, lak_1 = a_ + 1.0 - X_, lak;
 			for (unsigned i = 2; i <= n_; ++i) {
 				double k = static_cast<double>(i);
-				lak = ((2.0 * k + a_ - 1.0 - X_) * lak_1 - (k - 1 + a_) * lak_2) / k;
+				lak = ((2.0 * k + a_ - 1.0 - X_) * lak_1 - (k - 1.0 + a_) * lak_2) / k;
 				lak_2 = lak_1;
 				lak_1 = lak;
 			}
@@ -173,6 +174,88 @@ namespace numer {
 			return coef_ * exp(-R_ * scale_) * pow(2.0 * R_ * scale_, l_) * lan_(2.0 * R_ * scale_);
 		}
 	};
+
+
+	class LegendrePolyno {
+	private:
+		const unsigned l_;
+
+	public:
+		LegendrePolyno(unsigned L_) : l_(L_) {}
+
+		double operator()(double X_) const {
+			if (l_ == 0) return 1.0;
+			if (l_ == 1) return X_;
+
+			double pl_2 = 1.0, pl_1 = X_, pl;
+			for (unsigned i = 2; i <= l_; ++i) {
+				double l = static_cast<double>(i);
+				pl = ((2.0 * l - 1.0) * X_ * pl_1 - (l - 1.0) * pl_2) / l;
+				pl_2 = pl_1;
+				pl_1 = pl;
+			}
+			return pl;
+		}
+	};
+
+	class AssoLegendreFunc {
+	private:
+		LegendrePolyno pl_;
+		const unsigned l_;
+		const unsigned m_;
+
+
+	public:
+		AssoLegendreFunc(unsigned L_, unsigned M_)
+			: pl_(L_), l_(L_), m_(M_) {
+			if (L_ < M_) throw std::invalid_argument("L must be greater than or equal to M for associated Legendre function.");
+		}
+
+		double operator()(double X_) const {
+			double plm_2 = pl_(X_);
+			if (m_ == 0) return plm_2;
+
+			const double l = static_cast<double>(l_);
+			LegendrePolyno pl_1(l_ - 1);
+			double denom = sqrt(1.0 - X_ * X_);
+			double plm_1 = -l * (pl_1(X_) - X_ * pl_(X_)) / denom;
+			if (m_ == 1) return plm_1;
+
+			double plm;
+			for (unsigned i = 2; i <= m_; ++i) {
+				double m = static_cast<double>(i);
+				plm = ((l - m + 1.0) * X_ * plm_1 - (l + m - 1.0) * plm_2) / denom;
+				plm_2 = plm_1;
+				plm_1 = plm;
+			}
+			return plm;
+		}
+	};
+
+	class SphericalHarmonic {
+	private:
+		AssoLegendreFunc plm_;
+		const double m_;
+		double coef_;
+
+	public:
+		SphericalHarmonic(unsigned L_, int M_)
+			:plm_(L_, abs(M_)), m_(static_cast<double>(M_)) {
+			double l = static_cast<double>(L_);
+			unsigned m = abs(M_);
+			coef_ = sqrt((2.0 * l + 1.0) / (4.0 * Pi) * (factorial(L_ - m) / factorial(L_ + m)));
+			if (M_ >= 0) {
+				coef_ *= parity_u(m);
+			}
+		}
+
+		Complex operator()(double Theta_, double Phi_) const {
+			return coef_ * plm_(cos(Theta_)) * Complex::expi(m_ * Phi_);
+		}
+	};
+
+
+
 
 
 }//namespace numer end
