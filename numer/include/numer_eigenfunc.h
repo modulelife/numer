@@ -198,7 +198,7 @@ namespace numer {
 		}
 	};
 
-	class AssoLegendreFunc {
+	class AssoLegendrePolyno {
 	private:
 		LegendrePolyno pl_;
 		const unsigned l_;
@@ -206,7 +206,7 @@ namespace numer {
 
 
 	public:
-		AssoLegendreFunc(unsigned L_, unsigned M_)
+		AssoLegendrePolyno(unsigned L_, unsigned M_)
 			: pl_(L_), l_(L_), m_(M_) {
 			if (L_ < M_) throw std::invalid_argument("L must be greater than or equal to M for associated Legendre function.");
 		}
@@ -218,13 +218,13 @@ namespace numer {
 			const double l = static_cast<double>(l_);
 			LegendrePolyno pl_1(l_ - 1);
 			double denom = sqrt(1.0 - X_ * X_);
-			double plm_1 = -l * (pl_1(X_) - X_ * pl_(X_)) / denom;
+			double plm_1 = l * (X_ * plm_2 - pl_1(X_)) / denom;
 			if (m_ == 1) return plm_1;
 
 			double plm;
 			for (unsigned i = 2; i <= m_; ++i) {
 				double m = static_cast<double>(i);
-				plm = ((l - m + 1.0) * X_ * plm_1 - (l + m - 1.0) * plm_2) / denom;
+				plm = -(l + m - 1.0) * (l - m + 2.0) * plm_2 - 2.0 * (m - 1.0) * X_ * plm_1 / denom;
 				plm_2 = plm_1;
 				plm_1 = plm;
 			}
@@ -234,7 +234,7 @@ namespace numer {
 
 	class SphericalHarmonic {
 	private:
-		AssoLegendreFunc plm_;
+		AssoLegendrePolyno plm_;
 		const double m_;
 		double coef_;
 
