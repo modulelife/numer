@@ -132,6 +132,32 @@ namespace numer {
 	};
 
 
+	template<class AbstractCube>
+	class DimRearranger {
+	private:
+		AbstractCube& base_;
+		unsigned permutation_[3];
+
+	public:
+		DimRearranger(AbstractCube& Mat_base_, unsigned Dim1_id_, unsigned Dim2_id_, unsigned Dim3_id_)
+			: base_(Mat_base_) {
+			permutation_[0] = Dim1_id_;
+			permutation_[1] = Dim2_id_;
+			permutation_[2] = Dim3_id_;
+		}
+
+		decltype(auto) operator()(size_t Pos1_, size_t Pos2_, size_t Pos3_) {
+			size_t indice[3] = { Pos1_, Pos2_, Pos3_ };
+			return base_(indice[permutation_[0]], indice[permutation_[1]], indice[permutation_[2]]);
+		}
+
+		decltype(auto) operator()(size_t Pos1_, size_t Pos2_, size_t Pos3_) const {
+			size_t indice[3] = { Pos1_, Pos2_, Pos3_ };
+			return base_(indice[permutation_[0]], indice[permutation_[1]], indice[permutation_[2]]);
+		}
+	};
+
+
 
 
 }//namespace numer end
