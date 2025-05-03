@@ -313,7 +313,7 @@ namespace numer {
     }
 
     template<typename Ty, unsigned Dim>
-    inline constexpr auto inverse(SquareMatrix<Ty, Dim> A_) {
+    inline auto inverse(SquareMatrix<Ty, Dim> A_) {
         SquareMatrix<Ty, Dim> E = makeIdentityMatrix<Ty, Dim>();
         Ty one = static_cast<Ty>(1);
 
@@ -348,6 +348,45 @@ namespace numer {
         }
 
         return E;
+    }
+
+
+    template<typename Ty, unsigned Dim>
+    inline constexpr auto trace(SquareMatrix<Ty, Dim> M_) {
+        Ty result = static_cast<Ty>(0);
+        for (unsigned i = 0; i < Dim; ++i) {
+            result += M_[i][i];
+        }
+        return result;
+    }
+
+
+    template<typename Ty, unsigned Dim>
+    inline constexpr auto det(const SquareMatrix<Ty, Dim>& M_) {
+        if constexpr (Dim == 1) {
+            return M_[0][0];
+        }
+        else if constexpr (Dim == 2) {
+            return M_[0][0] * M_[1][1] - M_[0][1] * M_[1][0];
+        }
+        else {
+            Ty result = static_cast<Ty>(0);
+            for (unsigned col = 0; col < Dim; ++col) {
+                SquareMatrix<Ty, Dim - 1> sub{};
+                for (unsigned i = 1; i < Dim; ++i) {
+                    unsigned sub_col = 0;
+                    for (unsigned j = 0; j < Dim; ++j) {
+                        if (j != col) {
+                            sub[i - 1][sub_col++] = M_[i][j];
+                        }
+                    }
+                }
+
+                const Ty sign = (col % 2 == 0) ? Ty(1) : Ty(-1);
+                result += sign * M_[0][col] * det(sub);
+            }
+            return result;
+        }
     }
 
 
@@ -401,7 +440,7 @@ namespace numer {
     inline constexpr auto operator/(const Matrix<Ty, Rows, Cols>& Left_, const Tx& Right_);
 
     template<typename Ty, unsigned Dim>
-    inline auto operator^(SquareMatrix<Ty, Dim> M_, const int Expo_);
+    inline auto operator^(const SquareMatrix<Ty, Dim>& M_, const int Expo_);
 
 }//namespace numer end
 
@@ -641,7 +680,7 @@ inline constexpr auto numer::operator/(
 }
 
 template<typename Ty, unsigned Dim>
-inline auto numer::operator^(SquareMatrix<Ty, Dim> M_, const int Expo_) {
+inline auto numer::operator^(const SquareMatrix<Ty, Dim>& M_, const int Expo_) {
     if (Expo_ == 0) return makeIdentityMatrix<Ty, Dim>();
     SquareMatrix<Ty, Dim> result = makeIdentityMatrix<Ty, Dim>();
     SquareMatrix<Ty, Dim> base = Expo_ > 0 ? M_ : inverse(M_);
