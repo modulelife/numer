@@ -15,6 +15,7 @@
 
 #include <array>
 #include <utility>
+#include <cmath>
 #include <numer_complex.h>
 
 
@@ -92,6 +93,8 @@ namespace numer {
         constexpr auto transpose() const {
             return Vec_impl<Ty, Dim, !IsColumn>(Base::components_);
         }
+
+        constexpr auto t() const { return transpose(); }
     };
 
     
@@ -117,6 +120,10 @@ namespace numer {
         constexpr auto hermiConj() const {
             return this->conj().transpose();
         }
+
+        constexpr auto cc() const { return conj(); }
+        constexpr auto t() const { return transpose(); }
+        constexpr auto hc() const { return hermiConj(); }
     };
 
     
@@ -220,6 +227,8 @@ namespace numer {
             }
             return result;
         }
+
+        constexpr auto t() const { return transpose(); }
     };
 
 
@@ -253,11 +262,93 @@ namespace numer {
         constexpr auto hermiConj() const {
             return this->conj().transpose();
         }
+
+        constexpr auto cc() const { return conj(); }
+        constexpr auto t() const { return transpose(); }
+        constexpr auto hc() const { return hermiConj(); }
     };
 
 
     template<typename Ty, unsigned Dim>
-    using Smatrix = Matrix<Ty, Dim, Dim>; // square matrix
+    using SquareMatrix = Matrix<Ty, Dim, Dim>; // square matrix
+
+    template<typename Ty, unsigned Dim>
+    using Carre = Matrix<Ty, Dim, Dim>; // matrice carre
+
+
+
+    template<typename Ty, unsigned Dim>
+    inline constexpr auto makeIdentityMatrix() {
+        SquareMatrix<Ty, Dim> result{};
+        Ty zero = static_cast<Ty>(0);
+        Ty one = static_cast<Ty>(1);
+        for (unsigned i = 0; i < Dim; ++i) {
+            for (unsigned j = 0; j < Dim; ++j) {
+                if(i == j) result[i][j] = one;
+                else result[i][j] = zero;
+            }
+        }
+        return result;
+    }
+
+    template<typename Ty, unsigned Rows, unsigned Cols>
+    inline void swapRows(Matrix<Ty, Rows, Cols>& M_, unsigned Row1_, unsigned Row2_) {
+        for (unsigned i = 0; i < Cols; ++i) {
+            std::swap(M_[Row1_][i], M_[Row2_][i]);
+        }
+    }
+
+    template<typename Ty, unsigned Rows, unsigned Cols>
+    inline void scaleRow(Matrix<Ty, Rows, Cols>& M_, const Ty& Multiplier_, unsigned Row_) {
+        for (unsigned i = 0; i < Cols; ++i) {
+            M_[Row_][i] *=  Multiplier_;
+        }
+    }
+
+    template<typename Ty, unsigned Rows, unsigned Cols>
+    inline void addScaledRowTo(Matrix<Ty, Rows, Cols>& M_, const Ty& Multiplier_, unsigned Src_row_, unsigned Dst_row_) {
+        for (unsigned i = 0; i < Cols; ++i) {
+            M_[Dst_row_][i] += M_[Src_row_][i] * Multiplier_;
+        }
+    }
+
+    template<typename Ty, unsigned Dim>
+    inline constexpr auto inverse(SquareMatrix<Ty, Dim> A_) {
+        SquareMatrix<Ty, Dim> E = makeIdentityMatrix<Ty, Dim>();
+        Ty one = static_cast<Ty>(1);
+
+        for (unsigned col = 0; col < Dim; ++col) {
+            unsigned pivot_row = col;
+            Ty max_val = abs(A_[col][col]);
+
+            for (unsigned i = col + 1; i < Dim; ++i) {
+                Ty current = abs(A_[i][col]);
+                if (current > max_val) {
+                    max_val = current;
+                    pivot_row = i;
+                }
+            }
+
+            if (pivot_row != col) {
+                swapRows(A_, col, pivot_row);
+                swapRows(E, col, pivot_row);
+            }
+
+            const Ty pivot = A_[col][col];
+            scaleRow(A_, one / pivot, col);
+            scaleRow(E, one / pivot, col);
+
+            for (unsigned i = 0; i < Dim; ++i) {
+                if (i != col) {
+                    const Ty factor = A_[i][col];
+                    addScaledRowTo(A_, -factor, col, i);
+                    addScaledRowTo(E, -factor, col, i);
+                }
+            }
+        }
+
+        return E;
+    }
 
 
 
@@ -309,6 +400,9 @@ namespace numer {
     template<typename Ty, typename Tx, unsigned Rows, unsigned Cols>
     inline constexpr auto operator/(const Matrix<Ty, Rows, Cols>& Left_, const Tx& Right_);
 
+    template<typename Ty, unsigned Dim>
+    inline auto operator^(SquareMatrix<Ty, Dim> M_, const int Expo_);
+
 }//namespace numer end
 
 
@@ -357,7 +451,7 @@ inline constexpr auto numer::operator*(
     const Vect<Tx, Dim>& Right_)
 {
     using Tz = decltype(std::declval<Ty>() * std::declval<Tx>());
-    Smatrix<Tz, Dim> result{};
+    SquareMatrix<Tz, Dim> result{};
     for (unsigned i = 0; i < Dim; ++i) {
         for (unsigned j = 0; j < Dim; ++j) {
             result[i][j] = Left_[i] * Right_[j];
@@ -542,6 +636,20 @@ inline constexpr auto numer::operator/(
         for (unsigned j = 0; j < Cols; ++j) {
             result[i][j] = Left_[i][j] / Right_;
         }
+    }
+    return result;
+}
+
+template<typename Ty, unsigned Dim>
+inline auto numer::operator^(SquareMatrix<Ty, Dim> M_, const int Expo_) {
+    if (Expo_ == 0) return makeIdentityMatrix<Ty, Dim>();
+    SquareMatrix<Ty, Dim> result = makeIdentityMatrix<Ty, Dim>();
+    SquareMatrix<Ty, Dim> base = Expo_ > 0 ? M_ : inverse(M_);
+    int n = abs(Expo_);
+    while (n > 0) {
+        if (n % 2) result = result * base;
+        base = base * base;
+        n /= 2;
     }
     return result;
 }
