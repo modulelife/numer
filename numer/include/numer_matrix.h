@@ -134,7 +134,10 @@ namespace numer {
     using Vect = Vec_impl<Ty, Dim, false>;// row vector
 
     template<typename Ty>
-    using Vec3 = Vec_impl<Ty, 3, true>;// 3d vector
+    using Vec3 = Vec_impl<Ty, 3, true>;// 3d column vector
+
+    template<typename Ty>
+    using Vec3t = Vec_impl<Ty, 3, false>;// 3d row vector
 
 
 
@@ -312,6 +315,7 @@ namespace numer {
         }
     }
 
+    //you should check reversibility by urself
     template<typename Ty, unsigned Dim>
     inline auto inverse(SquareMatrix<Ty, Dim> A_) {
         SquareMatrix<Ty, Dim> E = makeIdentityMatrix<Ty, Dim>();
@@ -377,11 +381,13 @@ namespace numer {
                     unsigned sub_col = 0;
                     for (unsigned j = 0; j < Dim; ++j) {
                         if (j != col) {
-                            sub[i - 1][sub_col++] = M_[i][j];
+                            if constexpr (Dim - 1 > 0) {
+                                sub[i - 1][sub_col] = M_[i][j];
+                                sub_col += (sub_col < Dim - 2) ? 1 : 0;
+                            }
                         }
                     }
                 }
-
                 const Ty sign = (col % 2 == 0) ? Ty(1) : Ty(-1);
                 result += sign * M_[0][col] * det(sub);
             }

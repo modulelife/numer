@@ -18,6 +18,7 @@
 #include <numer_visualize.h>
 #include <numer_mat.h>
 #include <numer_grid.h>
+#include <numer_matrix.h>
 
 
 
@@ -221,11 +222,11 @@ namespace numer {
 
 	public:
 		HeatMapPlot(size_t Height_, size_t Width_)
-			:hght_(Height_), wdth_(Width_)
-		{}
+			:hght_(Height_), wdth_(Width_) {
+		}
 
 		template<class AbstractVec, typename Ty>
-		mat<RGB> renderImage(AbstractVec&& Vec_any_, size_t N_, const std::function<RGB(Ty)> Colorize_) {
+		mat<RGB> renderImage(AbstractVec&& Vec_any_, size_t N_, const std::function<RGB(Ty)> Colorize_) const {
 			
 			RangeSampler x_idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ - 1 });
 			mat<RGB> plot_img(hght_, wdth_);
@@ -238,7 +239,7 @@ namespace numer {
 		}
 
 		template<class AbstractMat, typename Ty>
-		mat<RGB> renderImage(AbstractMat&& Mat_any_, size_t Nrow_, size_t Ncol_, const std::function<RGB(Ty)> Colorize_) {
+		mat<RGB> renderImage(AbstractMat&& Mat_any_, size_t Nrow_, size_t Ncol_, const std::function<RGB(Ty)> Colorize_) const {
 
 			RangeSampler x_idxer(RangeSpec{ 0, static_cast<double>(Ncol_ - 1), wdth_ - 1 });
 			RangeSampler y_idxer(RangeSpec{ 0, static_cast<double>(Nrow_ - 1), hght_ - 1 });
@@ -249,6 +250,135 @@ namespace numer {
 				}
 			}
 			return plot_img;
+		}
+
+	};
+
+
+	class DensityPlot3D {
+	private:
+		const size_t hght_;
+		const size_t wdth_;
+		double distance_{ 2.0 };
+		double azimuth_{ Pi / 4.0 };
+		double elevation_{ Pi / 4.0 };
+		double hori_fov_{ Pi / 3.0 };
+		double render_dp_{ 1.0 };
+		size_t fineness_{ 100 };
+		double bright_gain_{ 1.0 };
+
+	public:
+		DensityPlot3D(size_t Height_, size_t Width_)
+			:hght_(Height_), wdth_(Width_) {
+		}
+
+		DensityPlot3D& setCamDistance(double Dist_) {
+			distance_ = Dist_;
+			return *this;
+		}
+
+		//between 0 to 2Pi
+		DensityPlot3D& setCamAzimuthAngle(double Azim_) {
+			azimuth_ = Azim_;
+			return *this;
+		}
+
+		//between -Pi/2 to Pi/2
+		DensityPlot3D& setCamElevationAngle(double Elev_) {
+			elevation_ = Elev_;
+			return *this;
+		}
+
+		//between 0 to 0.5Pi recommended, must less than Pi
+		DensityPlot3D& setHorizontalFOV(double HFOV_) {
+			hori_fov_ = HFOV_;
+			return *this;
+		}
+
+		//between 1.0 to any, don't set it too large though
+		DensityPlot3D& setRenderDepth(double Rdp_) {
+			render_dp_ = Rdp_;
+			return *this;
+		}
+
+		//number of samples along a single ray, aka image quality
+		DensityPlot3D& setFineness(size_t Fine_) {
+			fineness_ = Fine_;
+			return *this;
+		}
+
+		//between 1.0 to any, don't set it too large though
+		DensityPlot3D& setBrightnessGain(double Gain_) {
+			bright_gain_ = Gain_;
+			return *this;
+		}
+
+		template<class FieldRelocator, typename Ty>
+		mat<RGB> renderImage(
+			FieldRelocator&& Field_,
+			const std::function<Vec3<double>(Ty)> Grid_colorize_) const
+		{
+			//convenient defs
+			using vec3 = Vec3<double>;
+			using vec3t = Vec3t<double>;
+
+			//calculate the basis transform matrix
+			constexpr vec3 ex{ 1.0, 0.0, 0.0 }, ey{ 0.0, 1.0, 0.0 }, ez{ 0.0, 0.0, 1.0 };
+			constexpr Vec3<vec3t> world_basis{ ex.t(), ey.t(), ez.t() };
+			
+			vec3 cam_pos{ 
+				Spheric_To_Cartes3::x(distance_, Pi / 2.0 - elevation_, azimuth_),
+				Spheric_To_Cartes3::y(distance_, Pi / 2.0 - elevation_, azimuth_),
+				Spheric_To_Cartes3::z(distance_, Pi / 2.0 - elevation_, azimuth_),
+			};
+
+			vec3 ed = -cam_pos / distance_;
+			vec3 eh = ez ^ cam_pos;
+			eh /= sqrt(eh.t() * eh);
+			vec3 ev = eh ^ ed;
+			Vec3t<vec3> cam_basis{ ev, eh, ed };
+
+			const auto proj = world_basis * cam_basis;
+
+			//calculate parameters for ray generation
+			const double vh_ratio = static_cast<double>(hght_) / static_cast<double>(wdth_);
+			const double tan_half_hfov = tan(hori_fov_ / 2.0);
+			const double tan_half_vfov = tan_half_hfov * vh_ratio;
+
+			RangeSampler v_slope(RangeSpec{ tan_half_vfov, -tan_half_vfov, hght_ });
+			RangeSampler h_slope(RangeSpec{ -tan_half_hfov, tan_half_hfov, wdth_ });
+
+			RangeSampler len_para(RangeSpec{ (render_dp_ >= distance_ ? 0.0 : distance_ - render_dp_), distance_ + render_dp_, fineness_ });
+
+			//render
+			mat<RGB> image(hght_, wdth_);
+
+			using args__ = struct { size_t i__; size_t j__; };
+			mat<args__> arg_list = mat<args__>::creat(hght_, wdth_, [](size_t i, size_t j) {return args__{ i, j }; });
+
+			const auto frag_shader = [&](const args__& arg) -> void {
+				vec3 et{ v_slope(arg.i__), h_slope(arg.j__), 1.0 };
+				et /= sqrt(et.t() * et);
+
+				vec3 rgb{ 0.0, 0.0, 0.0 };
+
+				for (size_t i = 0; i < fineness_; ++i) {
+					vec3 cam_coord_pos = et * len_para(i);
+					vec3 world_coord_pos = proj * cam_coord_pos + cam_pos;
+
+					Ty grid_val = Field_(world_coord_pos[0], world_coord_pos[1], world_coord_pos[2]);
+					rgb += Grid_colorize_(grid_val);
+				}
+				rgb *= len_para.step() * bright_gain_;
+
+				GrayScale to_uint8t(0.0, 1.0);
+				RGB pixel{ to_uint8t(rgb[0]), to_uint8t(rgb[1]), to_uint8t(rgb[2]) };
+				image[arg.i__][arg.j__] = pixel;
+			};
+
+			std::for_each(std::execution::par, arg_list.begin(), arg_list.end(), frag_shader);
+
+			return image;
 		}
 
 	};

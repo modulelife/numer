@@ -319,8 +319,9 @@ namespace numer {
 
 
 		RGB clrHue__(double X_) {
-			if (X_ < 0.0 || X_ > 1.0) return HSL_to_RGB__(0.0, 50.0, 100.0);
-			return HSL_to_RGB__(X_ * 360.0, 50.0, 100.0);
+			if (X_ < 0.0) return HSL_to_RGB__(0.0, 50.0, 100.0);
+			if (X_ > 1.0) return HSL_to_RGB__(270.0, 50.0, 100.0);
+			return HSL_to_RGB__(X_ * 270.0, 50.0, 100.0);
 		}
 
 		RGB clrWhiteBlack_cyc__(double X_) {
@@ -428,7 +429,7 @@ namespace numer {
 		if (x_ < max_thrs_)
 		{
 			double y = (x_ - min_thrs_) / (max_thrs_ - min_thrs_);
-			return static_cast<uint8_t>(255 * y);
+			return static_cast<uint8_t>(255.0 * y);
 		}
 		return 255U;
 	}

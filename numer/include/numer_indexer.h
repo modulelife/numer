@@ -114,8 +114,8 @@ namespace numer {
 	class ImageOrientation {
 	private:
 		AbstractMat& base_;
-		id_order::original xorder_;
-		id_order::reverse yorder_;
+		id_order::reverse xorder_;
+		id_order::original yorder_;
 
 	public:
 		ImageOrientation(AbstractMat& Mat_base_, size_t Rows_, size_t Cols_)
