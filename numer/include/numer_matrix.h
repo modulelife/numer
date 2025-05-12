@@ -448,6 +448,20 @@ namespace numer {
     template<typename Ty, unsigned Dim>
     inline auto operator^(const SquareMatrix<Ty, Dim>& M_, const int Expo_);
 
+
+    //used for the case: t->0, e^At = 1 + At + (At)^2/2 + (At)^3/3! + ... 
+    template<unsigned Order, typename Ty, unsigned Dim>
+    constexpr auto expm_approx(const SquareMatrix<Ty, Dim>& M_) {
+        SquareMatrix<Ty, Dim> I = makeIdentityMatrix<Ty, Dim>();
+        SquareMatrix<Ty, Dim> result = I;
+        for (unsigned i = Order; i > 0; --i) {
+            result = I + M_ * result / static_cast<double>(i);
+        }
+        return result;
+    }
+
+
+
 }//namespace numer end
 
 

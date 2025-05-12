@@ -111,6 +111,36 @@ namespace numer {
 			return *this;
 		}
 
+		template<class AbstractVec>
+		Histogram& drawDataLine(AbstractVec&& Vec_real_, size_t N_) {
+			if (N_ == 0) return *this;
+			RangeSampler range(RangeSpec{ min_, max_, hght_ - 1 });
+			RangeSampler idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ - 1 });
+
+			size_t xaxis_ypos;
+			if (!range.verifyAndIndex(0.0, xaxis_ypos)) {
+				if (max_ <= 0.0) xaxis_ypos = hght_ - 1;
+				if (min_ >= 0.0) xaxis_ypos = 0;
+			}
+
+			size_t val_ypos;
+			for (size_t i = 0; i < wdth_; ++i) {
+				double val = Vec_real_(idxer(i));
+				if (isnan(val)) continue;
+				if (!range.verifyAndIndex(val, val_ypos)) {
+					val_ypos = val > max_ ? hght_ - 1 : 0;
+				}
+
+				for (int j = -2; j <= 2; ++j) {
+					size_t pos = hght_ - 1 - val_ypos - j;
+					if(pos < hght_) rawimg_[pos][i] = mixAlpha(rawimg_[pos][i], line_clr_);
+				}
+
+			}
+
+			return *this;
+		}
+
 		template<class AbstractVec, class EntrywiseConverter>
 		Histogram& drawData(AbstractVec&& Vec_any_, size_t N_, EntrywiseConverter&& To_real_) {
 			if (N_ == 0) return *this;
