@@ -1635,11 +1635,11 @@ namespace numer {
 		//if range is invalid, no changes will be made, thus "noexcept"
 		//Mixer should be any callable object with signature " Ty (const Ty&, const Ty&) "
 		template<class Mixer>
-		void overlay(const mat<Ty, Alloc>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept;
+		mat& overlay(const mat<Ty, Alloc>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept;
 
 		//overlay method for all compatible types, Mixer : any callable " Ty (const Ty&, const Tx&) "
 		template<class Mixer, typename Tx, class Allocx>
-		void overlay(const mat<Tx, Allocx>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept;
+		mat& overlay(const mat<Tx, Allocx>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept;
 
 		//overlay method dedicated for patch of the same shape
 		template<class Mixer>
@@ -1841,12 +1841,12 @@ namespace numer {
 
 	template<typename Ty, class Alloc>
 	template<class Mixer>
-	void mat<Ty, Alloc>::overlay(const mat<Ty, Alloc>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept
+	mat<Ty, Alloc>& mat<Ty, Alloc>::overlay(const mat<Ty, Alloc>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept
 	{
 		size_t rows = Patch_.nrows();
 		size_t cols = Patch_.ncols();
 
-		if (Row_pos_ + rows > nrows() || Col_pos_ + cols > ncols()) return;
+		if (Row_pos_ + rows > nrows() || Col_pos_ + cols > ncols()) return *this;
 
 		const Ty* patch_iter = Patch_.mem_begin_();
 		for (size_t i = 0; i < rows; ++i)
@@ -1858,16 +1858,17 @@ namespace numer {
 				++iter;
 			}
 		}
+		return *this;
 	}
 
 	template<typename Ty, class Alloc>
 	template<class Mixer, typename Tx, class Allocx>
-	void mat<Ty, Alloc>::overlay(const mat<Tx, Allocx>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept
+	mat<Ty, Alloc>& mat<Ty, Alloc>::overlay(const mat<Tx, Allocx>& Patch_, size_t Row_pos_, size_t Col_pos_, Mixer&& Mix_) noexcept
 	{
 		size_t rows = Patch_.nrows();
 		size_t cols = Patch_.ncols();
 
-		if (Row_pos_ + rows > nrows() || Col_pos_ + cols > ncols()) return;
+		if (Row_pos_ + rows > nrows() || Col_pos_ + cols > ncols()) return *this;
 
 		const Tx* patch_iter = Patch_.mem_begin_();
 		for (size_t i = 0; i < rows; ++i)
@@ -1879,6 +1880,7 @@ namespace numer {
 				++iter;
 			}
 		}
+		return *this;
 	}
 
 	template<typename Ty, class Alloc>

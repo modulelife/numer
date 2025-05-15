@@ -497,7 +497,7 @@ inline constexpr auto numer::operator*(
     const Vec<Tx, Dim>& Right_)
 {
     using Tz = decltype(std::declval<Ty>() * std::declval<Tx>());
-    Tz result = static_cast<Tz>(0);
+    Tz result{};
     for (unsigned i = 0; i < Dim; ++i) {
         result += Left_[i] * Right_[i];
     }
@@ -579,7 +579,7 @@ inline constexpr auto numer::operator*(
     using Tz = decltype(std::declval<Ty>() * std::declval<Tx>());
     Vect<Tz, Cols> result{};
     for (unsigned j = 0; j < Cols; ++j) {
-        Tz component = static_cast<Tz>(0);
+        Tz component{};
         for (unsigned i = 0; i < Rows; ++i) {
             component += Left_[i] * Right_[i][j];
         }
@@ -596,7 +596,7 @@ inline constexpr auto numer::operator*(
     using Tz = decltype(std::declval<Ty>()* std::declval<Tx>());
     Vec<Tz, Rows> result{};
     for (unsigned i = 0; i < Rows; ++i) {
-        Tz component = static_cast<Tz>(0);
+        Tz component{};
         for (unsigned j = 0; j < Cols; ++j) {
             component += Left_[i][j] * Right_[j];
         }
@@ -644,7 +644,7 @@ inline constexpr auto numer::operator*(
     Matrix<Tz, Rows, Cols> result{};
     for (unsigned i = 0; i < Rows; ++i) {
         for (unsigned j = 0; j < Cols; ++j) {
-            Tz entry = static_cast<Tz>(0);
+            Tz entry{};
             for (unsigned k = 0; k < Mid; ++k) {
                 entry += Left_[i][k] * Right_[k][j];
             }
