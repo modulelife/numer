@@ -100,14 +100,37 @@ namespace numer {
 		class cyclic {
 		private:
 			size_t idm_;
+			size_t off_;
 
 		public:
-			cyclic(size_t Max_id_) : idm_(Max_id_) {}
+			cyclic(size_t Max_id_) : idm_(Max_id_), off_(0) {}
+			cyclic(size_t Max_id_, size_t Offset_) : idm_(Max_id_), off_(Offset_) {}
 			size_t operator()(size_t Idx_) const {
-				return Idx_ % idm_;
+				return (Idx_ + off_) % idm_;
 			}
 		};
 	}
+
+
+	template<class Id_Order, class VecContainer>
+	class VecReIndexer {
+	private:
+		VecContainer& base_;
+		Id_Order order_;
+
+	public:
+		VecReIndexer(VecContainer& Vec_base_, Id_Order&& Order_)
+			: base_(Vec_base_), order_(Order_){
+		}
+
+		decltype(auto) operator()(size_t Pos_) {
+			return base_[order_(Pos_)];
+		}
+
+		decltype(auto) operator()(size_t Pos_) const {
+			return base_[order_(Pos_)];
+		}
+	};
 
 
 	template<class AbstractMat>

@@ -41,7 +41,7 @@ namespace numer {
 	namespace detail_{
 
 
-		template <typename Uint>
+		template<typename Uint>
         inline Uint bit_reverse__(Uint x_, int low_bits_) {
             Uint reversed = 0;
             for (int i = 0; i < low_bits_; ++i) {
@@ -51,11 +51,21 @@ namespace numer {
             return reversed;
         }
 
+        template<typename T>
+        concept has_cplx_multipy_assignment = requires(T obj, Complex c) {
+            obj.operator*=(c);
+        };
+
 
         //hey! you shouldn't use this
 		template<bool Inverse_, class Array>
 		inline void fft_radix2__(Array&& seq_cplx_, const size_t len_)
         {
+            using Complex_Absorbing_T = std::decay_t<decltype(seq_cplx_[0])>;
+            using Product_T = std::decay_t<decltype(std::declval<Complex_Absorbing_T>() * std::declval<Complex>())>;
+            static_assert(std::is_same<Complex_Absorbing_T, Product_T>::value, "Element type can not carry out complex scalar multipication");
+
+
             constexpr double sign = Inverse_ ? 1.0 : -1.0;
 
             thread_local std::vector<size_t> pos(len_);
@@ -86,8 +96,8 @@ namespace numer {
 #pragma omp simd
                     for (size_t j = 0; j < m2; ++j) {
 
-                        const Complex t = w * seq_cplx_[k + j + m2];
-                        const Complex u = seq_cplx_[k + j];
+                        const Complex_Absorbing_T t = w * seq_cplx_[k + j + m2];
+                        const Complex_Absorbing_T u = seq_cplx_[k + j];
 
                         seq_cplx_[k + j] = u + t;
                         seq_cplx_[k + j + m2] = u - t;
@@ -103,12 +113,18 @@ namespace numer {
         template<bool Inverse_, class Array>
         inline void fft_bluestein__(Array&& seq_cplx_, const size_t len_)
         {
+            using Complex_Absorbing_T = std::decay_t<decltype(seq_cplx_[0])>;
+            using Product_T = std::decay_t<decltype(std::declval<Complex_Absorbing_T>()* std::declval<Complex>())>;
+            static_assert(std::is_same<Complex_Absorbing_T, Product_T>::value, "Element type can not carry out complex scalar multipication");
+            static_assert(has_cplx_multipy_assignment<Complex_Absorbing_T>, "Element type can not carry out complex scalar assignment multipication");
+
+
             constexpr double sign = Inverse_ ? -1.0 : 1.0;
             const size_t len_ex = to_pow2_up(2 * len_ - 1);
             const double N = static_cast<double>(len_);
             const double M = static_cast<double>(len_ex);
 
-            thread_local std::vector<Complex> a(len_ex);
+            thread_local std::vector<Complex_Absorbing_T> a(len_ex);
             thread_local std::vector<Complex> b(len_ex);
             thread_local std::vector<Complex> w(len_ex);
             thread_local bool init = false;
@@ -224,9 +240,10 @@ namespace numer {
     template<class InIt, class OutIt>
     inline void fft_ortho(InIt First_, const size_t Len_, OutIt Dest_complx_)
     {
-        std::vector<Complex> seq_buf(Len_);
+        using Complex_Absorbing_T = std::decay_t<decltype(*Dest_complx_)>;
+        std::vector<Complex_Absorbing_T> seq_buf(Len_);
         for (size_t i = 0; i < Len_; ++i) {
-            seq_buf[i] = *First_++;
+            seq_buf[i] = (*First_++) * Complex::identity();
         }
 
         if (is_pow2(Len_)) detail_::fft_radix2__<false>(seq_buf, Len_);
@@ -247,9 +264,10 @@ namespace numer {
     template<class InIt, class OutIt>
     inline void ifft_ortho(InIt First_, const size_t Len_, OutIt Dest_complx_)
     {
-        std::vector<Complex> seq_buf(Len_);
+        using Complex_Absorbing_T = std::decay_t<decltype(*Dest_complx_)>;
+        std::vector<Complex_Absorbing_T> seq_buf(Len_);
         for (size_t i = 0; i < Len_; ++i) {
-            seq_buf[i] = *First_++;
+            seq_buf[i] = (*First_++) * Complex::identity();
         }
 
         if (is_pow2(Len_)) detail_::fft_radix2__<true>(seq_buf, Len_);
@@ -271,9 +289,10 @@ namespace numer {
     template<class InIt, class OutIt>
     inline void fft(InIt First_, const size_t Len_, OutIt Dest_complx_)
     {
-        std::vector<Complex> seq_buf(Len_);
+        using Complex_Absorbing_T = std::decay_t<decltype(*Dest_complx_)>;
+        std::vector<Complex_Absorbing_T> seq_buf(Len_);
         for (size_t i = 0; i < Len_; ++i) {
-            seq_buf[i] = *First_++;
+            seq_buf[i] = (*First_++) * Complex::identity();
         }
 
         if (is_pow2(Len_)) detail_::fft_radix2__<false>(seq_buf, Len_);
@@ -289,9 +308,10 @@ namespace numer {
     template<class InIt, class OutIt>
     inline void ifft(InIt First_, const size_t Len_, OutIt Dest_complx_)
     {
-        std::vector<Complex> seq_buf(Len_);
+        using Complex_Absorbing_T = std::decay_t<decltype(*Dest_complx_)>;
+        std::vector<Complex_Absorbing_T> seq_buf(Len_);
         for (size_t i = 0; i < Len_; ++i) {
-            seq_buf[i] = *First_++;
+            seq_buf[i] = (*First_++) * Complex::identity();
         }
 
         if (is_pow2(Len_)) detail_::fft_radix2__<true>(seq_buf, Len_);
@@ -310,8 +330,8 @@ namespace numer {
 	
 	//in-place FFT for 2d complex field in mat<Complex>
     //normalize factor N^0.5 for FT and IFT
-    template<class Alloc__>
-    inline void fft2d_ortho_par(mat<Complex, Alloc__>& Field_complx_)
+    template<typename Complex_Absorbing_T, class Alloc__>
+    inline void fft2d_ortho_par(mat<Complex_Absorbing_T, Alloc__>& Field_complx_)
     {
         size_t X = Field_complx_.ncols();
         size_t Y = Field_complx_.nrows();
@@ -333,8 +353,8 @@ namespace numer {
 
     //in-place FFT for 2d complex field in mat<Complex>
     //normalize factor N^0.5 for FT and IFT
-    template<class Alloc__>
-    inline void ifft2d_ortho_par(mat<Complex, Alloc__>& Field_complx_)
+    template<typename Complex_Absorbing_T, class Alloc__>
+    inline void ifft2d_ortho_par(mat<Complex_Absorbing_T, Alloc__>& Field_complx_)
     {
         size_t X = Field_complx_.ncols();
         size_t Y = Field_complx_.nrows();
@@ -356,8 +376,8 @@ namespace numer {
 
     //in-place FFT for 2d complex field in mat<Complex>
     //normalize factor 1 for FT and N for IFT
-    template<class Alloc__>
-    inline void fft2d_par(mat<Complex, Alloc__>& Field_complx_)
+    template<typename Complex_Absorbing_T, class Alloc__>
+    inline void fft2d_par(mat<Complex_Absorbing_T, Alloc__>& Field_complx_)
     {
         size_t X = Field_complx_.ncols();
         size_t Y = Field_complx_.nrows();
@@ -379,8 +399,8 @@ namespace numer {
 
     //in-place FFT for 2d complex field in mat<Complex>
     //normalize factor 1 for FT and N for IFT
-    template<class Alloc__>
-    inline void ifft2d_par(mat<Complex, Alloc__>& Field_complx_)
+    template<typename Complex_Absorbing_T, class Alloc__>
+    inline void ifft2d_par(mat<Complex_Absorbing_T, Alloc__>& Field_complx_)
     {
         size_t X = Field_complx_.ncols();
         size_t Y = Field_complx_.nrows();
@@ -400,12 +420,12 @@ namespace numer {
             [&](size_t id) { ifft(Field_complx_.col(id).begin(), Y); });
     }
 
-    template<class Alloc__>
-    inline void centralize(mat<Complex, Alloc__>& Spectr) {
+    template<typename Complex_Absorbing_T, class Alloc__>
+    inline void centralize(mat<Complex_Absorbing_T, Alloc__>& Spectr) {
 
         size_t X = Spectr.ncols();
         size_t Y = Spectr.nrows();
-        mat<Complex, Alloc__> xcentered(Y, X);
+        mat<Complex_Absorbing_T, Alloc__> xcentered(Y, X);
         for (size_t i = 0; i < Y; ++i) {
             auto src = Spectr.row(i).ccycle_from(X / 2);
             auto des = xcentered.row(i).begin();
