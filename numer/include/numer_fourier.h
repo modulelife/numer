@@ -444,7 +444,7 @@ namespace numer {
         }
     }
 
-    //in-place FFT for 2d complex field in mat<Complex>
+    //in-place FFT for 3d complex field in cube<Complex>
     //normalize factor N^0.5 for FT and IFT
     template<typename Complex_Absorbing_T, class Alloc__>
     inline void fft3d_ortho_par(cube<Complex_Absorbing_T, Alloc__>& Field_complx_)
@@ -468,7 +468,7 @@ namespace numer {
         std::for_each(std::execution::par, arg_list.begin(), arg_list.end(), depth_fft);
     }
 
-    //in-place FFT for 2d complex field in mat<Complex>
+    //in-place FFT for 3d complex field in cube<Complex>
     //normalize factor N^0.5 for FT and IFT
     template<typename Complex_Absorbing_T, class Alloc__>
     inline void ifft3d_ortho_par(cube<Complex_Absorbing_T, Alloc__>& Field_complx_)
@@ -491,6 +491,55 @@ namespace numer {
 
         std::for_each(std::execution::par, arg_list.begin(), arg_list.end(), depth_fft);
     }
+
+    //in-place FFT for 3d complex field in cube<Complex>
+    //normalize factor 1 for FT and N for IFT
+    template<typename Complex_Absorbing_T, class Alloc__>
+    inline void fft3d_par(cube<Complex_Absorbing_T, Alloc__>& Field_complx_)
+    {
+        const size_t X = Field_complx_.depth();
+        const size_t Y = Field_complx_.height();
+        const size_t Z = Field_complx_.width();
+
+        for (size_t i = 0; i < X; ++i) {
+            fft2d_par(Field_complx_[i].get());
+        }
+
+        using args__ = struct { size_t i__; size_t j__; };
+        mat<args__> arg_list = mat<args__>::creat(Y, Z, [](size_t i, size_t j) {return args__{ i, j }; });
+
+        const auto depth_fft = [&](const args__& arg) -> void {
+            auto dep_ary = Field_complx_.begin_at(arg.i__, arg.j__);
+            fft(dep_ary, X);
+            };
+
+        std::for_each(std::execution::par, arg_list.begin(), arg_list.end(), depth_fft);
+    }
+
+    //in-place FFT for 3d complex field in cube<Complex>
+    //normalize factor 1 for FT and N for IFT
+    template<typename Complex_Absorbing_T, class Alloc__>
+    inline void ifft3d_par(cube<Complex_Absorbing_T, Alloc__>& Field_complx_)
+    {
+        const size_t X = Field_complx_.depth();
+        const size_t Y = Field_complx_.height();
+        const size_t Z = Field_complx_.width();
+
+        for (size_t i = 0; i < X; ++i) {
+            ifft2d_par(Field_complx_[i].get());
+        }
+
+        using args__ = struct { size_t i__; size_t j__; };
+        mat<args__> arg_list = mat<args__>::creat(Y, Z, [](size_t i, size_t j) {return args__{ i, j }; });
+
+        const auto depth_fft = [&](const args__& arg) -> void {
+            auto dep_ary = Field_complx_.begin_at(arg.i__, arg.j__);
+            ifft(dep_ary, X);
+            };
+
+        std::for_each(std::execution::par, arg_list.begin(), arg_list.end(), depth_fft);
+    }
+
 
     template<typename Complex_Absorbing_T, class Alloc__>
     inline void centralize(cube<Complex_Absorbing_T, Alloc__>& Spectr_) {

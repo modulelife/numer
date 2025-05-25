@@ -19,6 +19,7 @@
 #include <numer_mat.h>
 #include <numer_grid.h>
 #include <numer_matrix.h>
+#include <functional>
 
 
 
@@ -341,6 +342,90 @@ namespace numer {
 		}
 	};
 
+
+
+	namespace gridclr {
+
+
+		class HeatMap {
+		private:
+			GrayScale			to_double_{ 0.0, 1.0 };
+			double				min_thrs_;
+			double				max_thrs_;
+			LinearHeatMap		clrmap_;
+
+		public:
+			HeatMap()
+				: min_thrs_(0.0), max_thrs_(1.0), clrmap_(0.0, 1.0, Color::Glacier()) {
+			}
+			HeatMap(double Minimum_, double Maximum_)
+				: min_thrs_(Minimum_), max_thrs_(Maximum_), clrmap_(Minimum_, Maximum_, Color::Glacier()) {
+			}
+			HeatMap(double Minimum_, double Maximum_, NormalizedColorMap Color_map_)
+				: min_thrs_(Minimum_), max_thrs_(Maximum_), clrmap_(Minimum_, Maximum_, Color_map_) {
+			}
+			HeatMap(double Minimum_, double Maximum_, LinearHeatMap Heatmap_)
+				: min_thrs_(Minimum_), max_thrs_(Maximum_), clrmap_(Heatmap_) {
+			}
+
+			Vec3<double> operator()(double x_) const {
+
+				if (x_ < min_thrs_) return Vec3<double>{0.0, 0.0, 0.0};
+
+				double y = (x_ - min_thrs_) / (max_thrs_ - min_thrs_);
+				RGB clr = clrmap_(x_);
+				Vec3<double> grid_clr{ to_double_(clr.R), to_double_(clr.G), to_double_(clr.B) };
+				grid_clr *= pow(y, 0.5);
+				return grid_clr;
+			}
+
+			Vec3<double> operator()(Complex c_) const {
+				double x_ = c_.sqrdAmp();
+				if (x_ < min_thrs_) return Vec3<double>{0.0, 0.0, 0.0};
+
+				double y = (x_ - min_thrs_) / (max_thrs_ - min_thrs_);
+				RGB clr = clrmap_(x_);
+				Vec3<double> grid_clr{ to_double_(clr.R), to_double_(clr.G), to_double_(clr.B) };
+				grid_clr *= pow(y, 0.5);
+				return grid_clr;
+			}
+
+		};
+
+
+		class CRainbow{
+		private:
+			GrayScale			to_double_{ 0.0, 1.0 };
+			double				max_thrs_;
+			ComplxRainbowClr	crainbow_;
+
+		public:
+			CRainbow()
+				: max_thrs_(1.0), crainbow_(1.0) {
+			}
+			CRainbow(double Maximum_)
+				: max_thrs_(Maximum_), crainbow_(sqrt(Maximum_)) {
+			}
+			CRainbow(double Maximum_, ComplxRainbowClr Crainbow_)
+				: max_thrs_(Maximum_), crainbow_(Crainbow_) {
+			}
+
+
+			Vec3<double> operator()(Complex c_) const {
+				double x_ = c_.sqrdAmp();
+
+				double y = x_ / max_thrs_;
+				RGB clr = crainbow_(c_);
+				Vec3<double> grid_clr{ to_double_(clr.R), to_double_(clr.G), to_double_(clr.B) };
+				grid_clr *= pow(y, 0.5);
+				return grid_clr;
+			}
+
+		};
+
+
+	}//namespace gridclr end
+
 	class DensityPlot3D {
 	private:
 		const size_t hght_;
@@ -402,7 +487,7 @@ namespace numer {
 		template<class RelocatedField, typename Ty>
 		mat<RGB> renderImage(
 			RelocatedField&& Field_,
-			const std::function<Vec3<double>(Ty)> Grid_colorize_) const
+			const std::function<Vec3<double>(Ty)> Grid_colorizer_) const
 		{
 			//convenient defs
 			using vec3 = Vec3<double>;
@@ -453,7 +538,7 @@ namespace numer {
 					vec3 world_coord_pos = proj * cam_coord_pos + cam_pos;
 
 					Ty grid_val = Field_(world_coord_pos[0], world_coord_pos[1], world_coord_pos[2]);
-					rgb += Grid_colorize_(grid_val);
+					rgb += Grid_colorizer_(grid_val);
 				}
 				rgb *= len_para.step() * bright_gain_;
 
