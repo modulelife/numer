@@ -125,12 +125,13 @@ namespace numer {
             const double N = static_cast<double>(len_);
             const double M = static_cast<double>(len_ex);
 
+            thread_local size_t prev_len = len_;
             thread_local std::vector<Complex_Absorbing_T> a(len_ex);
             thread_local std::vector<Complex> b(len_ex);
             thread_local std::vector<Complex> w(len_ex);
             thread_local bool init = false;
 
-            if(w.size() != len_ex) init = false;
+            if(prev_len != len_) init = false;
             if (w.size() < len_ex) {
                 a.resize(len_ex);
                 b.resize(len_ex);
@@ -145,6 +146,7 @@ namespace numer {
                     const double n = static_cast<double>(i);
                     w[i] = Complex::expi(sign * Pi * (M - n) * (M - n) / N);
                 }
+                prev_len = len_;
                 init = true;
             }
 
