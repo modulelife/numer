@@ -25,13 +25,13 @@ namespace numer {
 
 
 	template<typename Uint>
-	inline bool is_pow2(Uint Integer_) {
+	inline constexpr bool is_pow2(Uint Integer_) {
 		static_assert(!std::numeric_limits<Uint>::is_signed, "must pass an unsigned type");
 		return Integer_ != 0 && (Integer_ & (Integer_ - 1)) == 0;
 	}
 
 	template<typename Uint>
-	inline Uint to_pow2_down(Uint Integer_) {
+	inline constexpr Uint to_pow2_down(Uint Integer_) {
 		static_assert(!std::numeric_limits<Uint>::is_signed, "must pass an unsigned type");
 		if (Integer_ == 0) return 0;
 		for (unsigned shift = 1; shift < sizeof(Uint) * 8; shift <<= 1)
@@ -40,7 +40,7 @@ namespace numer {
 	}
 
 	template<typename Uint>
-	inline Uint to_pow2_up(Uint Integer_) {
+	inline constexpr Uint to_pow2_up(Uint Integer_) {
 		static_assert(!std::numeric_limits<Uint>::is_signed, "must pass an unsigned type");
 		if (Integer_ == 0) return 1;
 		--Integer_;
@@ -65,7 +65,7 @@ namespace numer {
 	}
 
 	template<typename Uint>
-	inline double parity_u(Uint Integer_) {
+	inline constexpr double parity_u(Uint Integer_) {
 		static_assert(!std::numeric_limits<Uint>::is_signed, "must pass an unsigned type");
 		if (Integer_ % 2U == 0) return 1.0;
 		return -1.0;

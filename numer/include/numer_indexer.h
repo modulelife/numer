@@ -61,7 +61,7 @@ namespace numer {
 		CubeContainer& base_;
 
 	public:
-		CubeIndexer(CubeContainer& Mat_base_) : base_(Mat_base_) {}
+		CubeIndexer(CubeContainer& Cube_base_) : base_(Cube_base_) {}
 
 		decltype(auto) operator()(size_t Pos1_, size_t Pos2_, size_t Pos3_) {
 			return base_[Pos1_][Pos2_][Pos3_];

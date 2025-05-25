@@ -72,8 +72,8 @@ namespace numer {
 		template<class AbstractVec>
 		Histogram& drawData(AbstractVec&& Vec_real_, size_t N_) {
 			if (N_ == 0) return *this;
-			RangeSampler range(RangeSpec{ min_, max_, hght_ - 1 });
-			RangeSampler idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ - 1 });
+			RangeSampler range(RangeSpec{ min_, max_, hght_ });
+			RangeSampler idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ });
 
 			size_t xaxis_ypos;
 			if (!range.verifyAndIndex(0.0, xaxis_ypos)) {
@@ -114,8 +114,8 @@ namespace numer {
 		template<class AbstractVec>
 		Histogram& drawDataLine(AbstractVec&& Vec_real_, size_t N_) {
 			if (N_ == 0) return *this;
-			RangeSampler range(RangeSpec{ min_, max_, hght_ - 1 });
-			RangeSampler idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ - 1 });
+			RangeSampler range(RangeSpec{ min_, max_, hght_ });
+			RangeSampler idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ });
 
 			size_t preval_ypos, val_ypos;
 
@@ -153,8 +153,8 @@ namespace numer {
 		template<class AbstractVec, class EntrywiseConverter>
 		Histogram& drawData(AbstractVec&& Vec_any_, size_t N_, EntrywiseConverter&& To_real_) {
 			if (N_ == 0) return *this;
-			RangeSampler range(RangeSpec{ min_, max_, hght_ - 1 });
-			RangeSampler idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ - 1 });
+			RangeSampler range(RangeSpec{ min_, max_, hght_ });
+			RangeSampler idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ });
 
 			size_t xaxis_ypos;
 			if (!range.verifyAndIndex(0.0, xaxis_ypos)) {
@@ -195,8 +195,8 @@ namespace numer {
 		template<class AbstractVec, class EntrywiseConverter, typename Ty>
 		Histogram& drawData(AbstractVec&& Vec_any_, size_t N_, EntrywiseConverter&& To_real_, const std::function<RGB(Ty)>& Colorize_) {
 			if (N_ == 0) return *this;
-			RangeSampler range(RangeSpec{ min_, max_, hght_ - 1 });
-			RangeSampler idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ - 1 });
+			RangeSampler range(RangeSpec{ min_, max_, hght_ });
+			RangeSampler idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ });
 
 			size_t xaxis_ypos;
 			if (!range.verifyAndIndex(0.0, xaxis_ypos)) {
@@ -236,7 +236,7 @@ namespace numer {
 		}
 
 		Histogram& drawHorizLine(double Val_) {
-			RangeSampler range(RangeSpec{ min_, max_, hght_ - 1 });
+			RangeSampler range(RangeSpec{ min_, max_, hght_ });
 			size_t ypos;
 			if (range.verifyAndIndex(Val_, ypos)) {
 				for (size_t i = 0; i < wdth_; ++i) {
@@ -267,7 +267,7 @@ namespace numer {
 		template<class AbstractVec, typename Ty>
 		mat<RGB> renderImage(AbstractVec&& Vec_any_, size_t N_, const std::function<RGB(Ty)> Colorize_) const {
 			
-			RangeSampler x_idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ - 1 });
+			RangeSampler x_idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ });
 			mat<RGB> plot_img(hght_, wdth_);
 			for (size_t i = 0; i < hght_; ++i) {
 				for (size_t j = 0; j < wdth_; ++j) {
@@ -280,8 +280,8 @@ namespace numer {
 		template<class AbstractMat, typename Ty>
 		mat<RGB> renderImage(AbstractMat&& Mat_any_, size_t Nrow_, size_t Ncol_, const std::function<RGB(Ty)> Colorize_) const {
 
-			RangeSampler x_idxer(RangeSpec{ 0, static_cast<double>(Ncol_ - 1), wdth_ - 1 });
-			RangeSampler y_idxer(RangeSpec{ 0, static_cast<double>(Nrow_ - 1), hght_ - 1 });
+			RangeSampler x_idxer(RangeSpec{ 0, static_cast<double>(Ncol_ - 1), wdth_ });
+			RangeSampler y_idxer(RangeSpec{ 0, static_cast<double>(Nrow_ - 1), hght_ });
 			mat<RGB> plot_img(hght_, wdth_);
 			for (size_t i = 0; i < hght_; ++i) {
 				for (size_t j = 0; j < wdth_; ++j) {
@@ -293,6 +293,53 @@ namespace numer {
 
 	};
 
+
+	template <class CubeContainer>
+	class FieldRelocator {
+	private:
+		const CubeContainer& base_;
+		RangeSampler dim0_rg_, dim1_rg_, dim2_rg_;
+
+	public:
+		FieldRelocator(const CubeContainer& Cube_base_, size_t Dim0_size_, size_t Dim1_size_, size_t Dim2_size_)
+			: base_(Cube_base_), dim0_rg_(), dim1_rg_(), dim2_rg_()
+		{
+			constexpr double L_MAX = 1.0;
+			const size_t max_size = std::max({ Dim0_size_, Dim1_size_, Dim2_size_ });
+
+			RangeSpec dim0_spec{ -L_MAX, L_MAX, Dim0_size_ }, dim1_spec{ -L_MAX, L_MAX, Dim1_size_ }, dim2_spec{ -L_MAX, L_MAX, Dim2_size_ };
+
+			if (max_size != Dim0_size_) {
+				double ratio = static_cast<double>(Dim0_size_) / static_cast<double>(max_size);
+				dim0_spec.start *= ratio;
+				dim0_spec.end *= ratio;
+			}
+			if (max_size != Dim1_size_) {
+				double ratio = static_cast<double>(Dim1_size_) / static_cast<double>(max_size);
+				dim1_spec.start *= ratio;
+				dim1_spec.end *= ratio;
+			}
+			if (max_size != Dim2_size_) {
+				double ratio = static_cast<double>(Dim2_size_) / static_cast<double>(max_size);
+				dim2_spec.start *= ratio;
+				dim2_spec.end *= ratio;
+			}
+
+			dim0_rg_.setRange(dim0_spec);
+			dim1_rg_.setRange(dim1_spec);
+			dim2_rg_.setRange(dim2_spec);
+
+		}
+
+		auto operator()(double X_, double Y_, double Z_) {
+			using Elem_T = std::decay_t<decltype(base_[0][0][0])>;
+			size_t idx0, idx1, idx2;
+			if (!dim0_rg_.verifyAndIndex(X_, idx0)) return Elem_T{};
+			if (!dim1_rg_.verifyAndIndex(Y_, idx1)) return Elem_T{};
+			if (!dim2_rg_.verifyAndIndex(Z_, idx2)) return Elem_T{};
+			return base_[idx0][idx1][idx2];
+		}
+	};
 
 	class DensityPlot3D {
 	private:
@@ -352,9 +399,9 @@ namespace numer {
 			return *this;
 		}
 
-		template<class FieldRelocator, typename Ty>
+		template<class RelocatedField, typename Ty>
 		mat<RGB> renderImage(
-			FieldRelocator&& Field_,
+			RelocatedField&& Field_,
 			const std::function<Vec3<double>(Ty)> Grid_colorize_) const
 		{
 			//convenient defs

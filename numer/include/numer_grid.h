@@ -26,7 +26,7 @@ namespace numer {
 	struct RangeSpec {
 		double start;
 		double end;
-		size_t max_index;
+		size_t length;
 	};
 
 	class RangeSampler {
@@ -35,22 +35,25 @@ namespace numer {
 		double diff_;
 		double idm_;
 
-	public:
-		explicit RangeSampler(const RangeSpec& Specifier_) {
+		void setTo_(const RangeSpec& Specifier_) {
+			start_ = Specifier_.start;
+			diff_ = Specifier_.end - Specifier_.start;
+			idm_ = static_cast<double>(Specifier_.length);
+		}
 
-			if (Specifier_.max_index == 0) {
-				start_ = (Specifier_.start + Specifier_.end) / 2.0;
-				diff_ = 0.0;
-				idm_ = 1.0;
-			}
-			else {
-				start_ = Specifier_.start;
-				diff_ = Specifier_.end - Specifier_.start;
-				idm_ = static_cast<double>(Specifier_.max_index);
-			}
+	public:
+		RangeSampler() : start_(0.0), diff_(0.0), idm_(1.0) {}
+
+		explicit RangeSampler(const RangeSpec& Specifier_) {
+			setTo_(Specifier_);
+		}
+
+		void setRange(const RangeSpec& Specifier_) {
+			setTo_(Specifier_);
 		}
 
 		double operator()(size_t Idx_) const {
+			if (idm_ == 0.0) return start_;
 			double ratio = static_cast<double>(Idx_) / idm_;
 			return start_ + diff_ * ratio;
 		}
@@ -62,9 +65,9 @@ namespace numer {
 		bool verifyAndIndex(double Coord_, size_t& Idx_var_) const {
 			if(diff_ == 0.0) return false;
 			double off = Coord_ - start_;
-			if (off < 0.0 || off > diff_) return false;
+			if (off < 0.0 || off >= diff_) return false;
 			double idx = idm_ * off / diff_;
-			Idx_var_ = static_cast<size_t>(idx + 0.5);
+			Idx_var_ = static_cast<size_t>(idx);
 			return true;
 		}
 	};

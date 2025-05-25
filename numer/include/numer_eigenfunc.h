@@ -127,6 +127,23 @@ namespace numer {
 		}
 	};
 
+	class CoherentState3D {
+	private:
+		CoherentState1D phiax_;
+		CoherentState1D phiay_;
+		CoherentState1D phiaz_;
+
+	public:
+		CoherentState3D(Complex Alpha_x_, double Beta_x_, Complex Alpha_y_, double Beta_y_, Complex Alpha_z_, double Beta_z_)
+			:phiax_(Alpha_x_, Beta_x_), phiay_(Alpha_y_, Beta_y_), phiaz_(Alpha_z_, Beta_z_)
+		{
+		}
+
+		Complex operator()(double X_, double Y_, double Z_) const {
+			return phiax_(X_) * phiay_(Y_) * phiaz_(Z_);
+		}
+	};
+
 
 	class AssoLaguerrePolyno {
 	private:
@@ -212,6 +229,12 @@ namespace numer {
 		}
 
 		double operator()(double X_) const {
+			constexpr double epsilon = std::numeric_limits<double>::epsilon() * 10;
+
+			if (std::abs(X_) >= 1.0 - epsilon) {
+				return (m_ == 0) ? pl_(X_) : 0.0;  // m>0 Ê±·µ»Ø0
+			}
+
 			double plm_2 = pl_(X_);
 			if (m_ == 0) return plm_2;
 
@@ -269,6 +292,8 @@ namespace numer {
 			return Rnl_(R_) * Ylm_(Theta_, Phi_);
 		}
 	};
+
+
 
 
 

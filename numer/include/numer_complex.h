@@ -59,7 +59,7 @@ namespace numer {
 		constexpr double re() const { return re_; }
 		constexpr double im() const { return im_; }
 		//a.k.a. modulus lenght
-		double amplitude() const { return sqrt(re_ * re_ + im_ * im_ + 1e-7); }
+		double amplitude() const { return sqrt(re_ * re_ + im_ * im_); }
 		//a.k.a. squared modulus lenght
 		constexpr double sqrdAmp() const { return re_ * re_ + im_ * im_; }
 		//a.k.a. argument, in range [0, 2Pi)

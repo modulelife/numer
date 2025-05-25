@@ -1554,43 +1554,43 @@ namespace numer {
 		}
 
 		//static 2d-array style access row
-		pointer operator[](size_t Row_Id_) noexcept
+		pointer operator[](size_t Row_id_) noexcept
 		{
-			return data_ + ncols_ * Row_Id_;
+			return data_ + ncols_ * Row_id_;
 		}
 
 		//classic 2d-array const access row
-		const_pointer operator[](size_t Row_Id_) const noexcept
+		const_pointer operator[](size_t Row_id_) const noexcept
 		{
-			return data_ + ncols_ * Row_Id_;
+			return data_ + ncols_ * Row_id_;
 		}
 
 		//access row
-		row_view row(size_t Row_Id_) noexcept(false)
+		row_view row(size_t Row_id_) noexcept(false)
 		{
-			if (Row_Id_ >= nrows()) throw std::out_of_range("index out of range");
-			return row_view(Row_Id_, data_, ncols_);
+			if (Row_id_ >= nrows()) throw std::out_of_range("index out of range");
+			return row_view(Row_id_, data_, ncols_);
 		}
 
 		//const access row
-		const row_view row(size_t Row_Id_) const noexcept(false)
+		const row_view row(size_t Row_id_) const noexcept(false)
 		{
-			if (Row_Id_ >= nrows()) throw std::out_of_range("index out of range");
-			return row_view(Row_Id_, data_, ncols_);
+			if (Row_id_ >= nrows()) throw std::out_of_range("index out of range");
+			return row_view(Row_id_, data_, ncols_);
 		}
 
 		//access column
-		col_view col(size_t Col_Id_) noexcept(false)
+		col_view col(size_t Col_id_) noexcept(false)
 		{
-			if (Col_Id_ >= ncols()) throw std::out_of_range("index out of range");
-			return col_view(Col_Id_, data_, ncols_, nrows_);
+			if (Col_id_ >= ncols()) throw std::out_of_range("index out of range");
+			return col_view(Col_id_, data_, ncols_, nrows_);
 		}
 
 		//const access column
-		const col_view col(size_t Col_Id_) const noexcept(false)
+		const col_view col(size_t Col_id_) const noexcept(false)
 		{
-			if (Col_Id_ >= ncols()) throw std::out_of_range("index out of range");
-			return col_view(Col_Id_, data_, ncols_, nrows_);
+			if (Col_id_ >= ncols()) throw std::out_of_range("index out of range");
+			return col_view(Col_id_, data_, ncols_, nrows_);
 		}
 
 		//factory method accepting a Generator : Ty (size_t i, size_t j), i/j stands for row/col index

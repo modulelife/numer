@@ -26,6 +26,7 @@
 #include <numer_complex.h>
 #include <numer_common.h>
 #include <numer_mat.h>
+#include <numer_cube.h>
 #include <bit>
 #include <utility>
 #include <cmath>
@@ -333,8 +334,8 @@ namespace numer {
     template<typename Complex_Absorbing_T, class Alloc__>
     inline void fft2d_ortho_par(mat<Complex_Absorbing_T, Alloc__>& Field_complx_)
     {
-        size_t X = Field_complx_.ncols();
-        size_t Y = Field_complx_.nrows();
+        const size_t X = Field_complx_.ncols();
+        const size_t Y = Field_complx_.nrows();
         std::vector<size_t> argsx(Y);
         std::vector<size_t> argsy(X);
 
@@ -356,8 +357,8 @@ namespace numer {
     template<typename Complex_Absorbing_T, class Alloc__>
     inline void ifft2d_ortho_par(mat<Complex_Absorbing_T, Alloc__>& Field_complx_)
     {
-        size_t X = Field_complx_.ncols();
-        size_t Y = Field_complx_.nrows();
+        const size_t X = Field_complx_.ncols();
+        const size_t Y = Field_complx_.nrows();
         std::vector<size_t> argsx(Y);
         std::vector<size_t> argsy(X);
 
@@ -379,8 +380,8 @@ namespace numer {
     template<typename Complex_Absorbing_T, class Alloc__>
     inline void fft2d_par(mat<Complex_Absorbing_T, Alloc__>& Field_complx_)
     {
-        size_t X = Field_complx_.ncols();
-        size_t Y = Field_complx_.nrows();
+        const size_t X = Field_complx_.ncols();
+        const size_t Y = Field_complx_.nrows();
         std::vector<size_t> argsx(Y);
         std::vector<size_t> argsy(X);
 
@@ -402,8 +403,8 @@ namespace numer {
     template<typename Complex_Absorbing_T, class Alloc__>
     inline void ifft2d_par(mat<Complex_Absorbing_T, Alloc__>& Field_complx_)
     {
-        size_t X = Field_complx_.ncols();
-        size_t Y = Field_complx_.nrows();
+        const size_t X = Field_complx_.ncols();
+        const size_t Y = Field_complx_.nrows();
         std::vector<size_t> argsx(Y);
         std::vector<size_t> argsy(X);
 
@@ -421,13 +422,13 @@ namespace numer {
     }
 
     template<typename Complex_Absorbing_T, class Alloc__>
-    inline void centralize(mat<Complex_Absorbing_T, Alloc__>& Spectr) {
+    inline void centralize(mat<Complex_Absorbing_T, Alloc__>& Spectr_) {
 
-        size_t X = Spectr.ncols();
-        size_t Y = Spectr.nrows();
+        const size_t X = Spectr_.ncols();
+        const size_t Y = Spectr_.nrows();
         mat<Complex_Absorbing_T, Alloc__> xcentered(Y, X);
         for (size_t i = 0; i < Y; ++i) {
-            auto src = Spectr.row(i).ccycle_from(X / 2);
+            auto src = Spectr_.row(i).ccycle_from(X / 2);
             auto des = xcentered.row(i).begin();
             for (size_t j = 0; j < X; ++j) {
                 *des++ = *src++;
@@ -436,13 +437,78 @@ namespace numer {
 
         for (size_t j = 0; j < X; ++j) {
             auto src = xcentered.col(j).ccycle_from(Y / 2);
-            auto des = Spectr.col(j).begin();
+            auto des = Spectr_.col(j).begin();
             for (size_t i = 0; i < Y; ++i) {
                 *des++ = *src++;
             }
         }
     }
 
+    //in-place FFT for 2d complex field in mat<Complex>
+    //normalize factor N^0.5 for FT and IFT
+    template<typename Complex_Absorbing_T, class Alloc__>
+    inline void fft3d_ortho_par(cube<Complex_Absorbing_T, Alloc__>& Field_complx_)
+    {
+        const size_t X = Field_complx_.depth();
+        const size_t Y = Field_complx_.height();
+        const size_t Z = Field_complx_.width();
+
+        for (size_t i = 0; i < X; ++i) {
+            fft2d_ortho_par(Field_complx_[i].get());
+        }
+
+        using args__ = struct { size_t i__; size_t j__; };
+        mat<args__> arg_list = mat<args__>::creat(Y, Z, [](size_t i, size_t j) {return args__{ i, j }; });
+
+        const auto depth_fft = [&](const args__& arg) -> void {
+            auto dep_ary = Field_complx_.begin_at(arg.i__, arg.j__);
+            fft_ortho(dep_ary, X);
+            };
+
+        std::for_each(std::execution::par, arg_list.begin(), arg_list.end(), depth_fft);
+    }
+
+    //in-place FFT for 2d complex field in mat<Complex>
+    //normalize factor N^0.5 for FT and IFT
+    template<typename Complex_Absorbing_T, class Alloc__>
+    inline void ifft3d_ortho_par(cube<Complex_Absorbing_T, Alloc__>& Field_complx_)
+    {
+        const size_t X = Field_complx_.depth();
+        const size_t Y = Field_complx_.height();
+        const size_t Z = Field_complx_.width();
+
+        for (size_t i = 0; i < X; ++i) {
+            ifft2d_ortho_par(Field_complx_[i].get());
+        }
+
+        using args__ = struct { size_t i__; size_t j__; };
+        mat<args__> arg_list = mat<args__>::creat(Y, Z, [](size_t i, size_t j) {return args__{ i, j }; });
+
+        const auto depth_fft = [&](const args__& arg) -> void {
+            auto dep_ary = Field_complx_.begin_at(arg.i__, arg.j__);
+            ifft_ortho(dep_ary, X);
+            };
+
+        std::for_each(std::execution::par, arg_list.begin(), arg_list.end(), depth_fft);
+    }
+
+    template<typename Complex_Absorbing_T, class Alloc__>
+    inline void centralize(cube<Complex_Absorbing_T, Alloc__>& Spectr_) {
+
+        const size_t X = Spectr_.depth();
+
+        for (size_t i = 0; i < X; ++i) {
+            centralize(Spectr_[i].get());
+        }
+        const size_t off = X / 2;
+        std::vector<mat<Complex_Absorbing_T, Alloc__>> temp(X);
+        for (size_t i = 0; i < X; ++i) {
+            std::swap(Spectr_[i].get(), temp[i]);
+        }
+        for (size_t i = 0; i < X; ++i) {
+            std::swap(Spectr_[i].get(), temp[(i + off) % X]);
+        }
+    }
 
 }//namespace numer end
 
