@@ -67,18 +67,21 @@ namespace numer {
             static_assert(std::is_same<Complex_Absorbing_T, Product_T>::value, "Element type can not carry out complex scalar multipication");
 
 
-            constexpr double sign = Inverse_ ? 1.0 : -1.0;
+            constexpr double sign = Inverse_ ? -1.0 : 1.0;
 
-            thread_local std::vector<size_t> pos(len_);
+            thread_local size_t prev_len = 0;
+            thread_local std::vector<size_t> pos;
             thread_local bool init = false;
 
-            if (pos.size() != len_) init = false;
+            if (prev_len != len_) init = false;
             if (pos.size() < len_) pos.resize(len_);
             if (!init) {
                 const int log2n = std::countr_zero(len_);
                 for (size_t i = 0; i < len_; ++i) {
                     pos[i] = bit_reverse__(i, log2n);
                 }
+                prev_len = len_;
+                init = true;
             }
 
             // in-place rearrangement, good for cache hit
@@ -121,15 +124,15 @@ namespace numer {
 
 
             constexpr double sign = Inverse_ ? -1.0 : 1.0;
+
+            thread_local size_t prev_len = 0;
+            thread_local std::vector<Complex_Absorbing_T> a;
+            thread_local std::vector<Complex> b, w;
+            thread_local bool init = false;
+
             const size_t len_ex = to_pow2_up(2 * len_ - 1);
             const double N = static_cast<double>(len_);
             const double M = static_cast<double>(len_ex);
-
-            thread_local size_t prev_len = len_;
-            thread_local std::vector<Complex_Absorbing_T> a(len_ex);
-            thread_local std::vector<Complex> b(len_ex);
-            thread_local std::vector<Complex> w(len_ex);
-            thread_local bool init = false;
 
             if(prev_len != len_) init = false;
             if (w.size() < len_ex) {
