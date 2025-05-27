@@ -114,7 +114,7 @@ namespace numer {
 	}
 
 	template<typename Ty, class Alloc__, typename Info_Header>
-	bool readMat(std::string Path_no_suffix_, mat<Ty, Alloc__>& Dst_, Info_Header& Info_)
+	bool readMat_weak(std::string Path_no_suffix_, mat<Ty, Alloc__>& Dst_, Info_Header& Info_)
 	{
 		static_assert(std::is_trivially_copyable<Ty>::value, "Element must be plain data type");
 		static_assert(std::is_trivially_copyable<Info_Header>::value, "Information header must be plain data type");
@@ -129,6 +129,35 @@ namespace numer {
 		if (head.info_size != 0) {
 			if (head.info_size == sizeof(Info_Header)) nmmat_in.read((char*)&Info_, sizeof(Info_Header));
 			else nmmat_in.seekg(head.info_size, std::ios::cur);
+		}
+
+		mat<Ty, Alloc__> buffer(head.rows, head.cols);
+		const size_t bytes = head.rows * head.cols * head.elem_size;
+		nmmat_in.read((char*)buffer[0], bytes);
+		Dst_ = std::move(buffer);
+		nmmat_in.close();
+		return true;
+	}
+
+	template<typename Ty, class Alloc__, typename Info_Header>
+	bool readMat_strong(std::string Path_no_suffix_, mat<Ty, Alloc__>& Dst_, Info_Header& Info_)
+	{
+		static_assert(std::is_trivially_copyable<Ty>::value, "Element must be plain data type");
+		static_assert(std::is_trivially_copyable<Info_Header>::value, "Information header must be plain data type");
+
+		Path_no_suffix_ += ".nmmat";
+		std::ifstream nmmat_in(Path_no_suffix_.c_str(), std::ios::binary | std::ios::in);
+		if (!nmmat_in.is_open()) return false;
+
+		Mat_File_Header head{};
+		nmmat_in.read((char*)&head, sizeof(Mat_File_Header));
+		if (head.elem_size != sizeof(Ty)) return false;
+		if (head.info_size != 0) {
+			if (head.info_size == sizeof(Info_Header)) nmmat_in.read((char*)&Info_, sizeof(Info_Header));
+			else return false;
+		}
+		else {
+			return false;
 		}
 
 		mat<Ty, Alloc__> buffer(head.rows, head.cols);
@@ -208,7 +237,7 @@ namespace numer {
 	}
 
 	template<typename Ty, class Alloc__, typename Info_Header>
-	bool readCube(std::string Path_no_suffix_, cube<Ty, Alloc__>& Dst_, Info_Header& Info_)
+	bool readCube_weak(std::string Path_no_suffix_, cube<Ty, Alloc__>& Dst_, Info_Header& Info_)
 	{
 		static_assert(std::is_trivially_copyable<Ty>::value, "Element must be plain data type");
 		static_assert(std::is_trivially_copyable<Info_Header>::value, "Information header must be plain data type");
@@ -235,6 +264,35 @@ namespace numer {
 		return true;
 	}
 
+	template<typename Ty, class Alloc__, typename Info_Header>
+	bool readCube_strong(std::string Path_no_suffix_, cube<Ty, Alloc__>& Dst_, Info_Header& Info_)
+	{
+		static_assert(std::is_trivially_copyable<Ty>::value, "Element must be plain data type");
+		static_assert(std::is_trivially_copyable<Info_Header>::value, "Information header must be plain data type");
 
+		Path_no_suffix_ += ".nmcube";
+		std::ifstream nmcube_in(Path_no_suffix_.c_str(), std::ios::binary | std::ios::in);
+		if (!nmcube_in.is_open()) return false;
+
+		Cube_File_Header head{};
+		nmcube_in.read((char*)&head, sizeof(Cube_File_Header));
+		if (head.elem_size != sizeof(Ty)) return false;
+		if (head.info_size != 0) {
+			if (head.info_size == sizeof(Info_Header)) nmcube_in.read((char*)&Info_, sizeof(Info_Header));
+			else return false;
+		}
+		else {
+			return false;
+		}
+
+		cube<Ty, Alloc__> buffer(head.depth, head.height, head.width);
+		const size_t bytes = head.height * head.width * head.elem_size;
+		for (size_t i = 0; i < head.depth; ++i) {
+			nmcube_in.read((char*)buffer[i][0], bytes);
+		}
+		Dst_ = std::move(buffer);
+		nmcube_in.close();
+		return true;
+	}
 
 }//namespace numer end
