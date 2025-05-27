@@ -1616,9 +1616,17 @@ namespace numer {
 		template<class EntrywiseGenerator>
 		void refill(EntrywiseGenerator&& Generate_);
 
+		//refill the mat with another mat of the same size
+		template<class EntrywiseConverter, typename Tx, class Allocx>
+		void refill(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_);
+
 		//refill the mat with a Generate
 		template<class EntrywiseGenerator>
 		void refill_par(EntrywiseGenerator&& Generate_);
+
+		//refill the mat with another mat of the same size
+		template<class EntrywiseConverter, typename Tx, class Allocx>
+		void refill_par(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_);
 
 		//select entries in range [R1, R2) X [C1, C2), returning a new mat
 		mat<Ty, Alloc> select_range(size_t R1_, size_t R2_, size_t C1_, size_t C2_) const noexcept(false);
@@ -1781,6 +1789,21 @@ namespace numer {
 	}
 
 	template<typename Ty, class Alloc>
+	template<class EntrywiseConverter, typename Tx, class Allocx>
+	void mat<Ty, Alloc>::refill(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_)
+	{
+		if (nrows() != Src_.nrows() || ncols() != Src_.ncols()) throw std::range_error("the shapes of the two mats do not match");
+
+		Ty* iter = mem_begin_();
+		for (const Tx* oiter = Src_.mem_begin_(), *oend = Src_.mem_end_();
+			oiter != oend;
+			++iter, ++oiter)
+		{
+			*iter = Convert_(*oiter);
+		}
+	}
+
+	template<typename Ty, class Alloc>
 	template<class EntrywiseGenerator>
 	void mat<Ty, Alloc>::refill_par(EntrywiseGenerator&& Generate_)
 	{
@@ -1802,6 +1825,15 @@ namespace numer {
 					*args.row_begin__++ = Generate_(args.i__, j);
 				}
 			});
+	}
+
+	template<typename Ty, class Alloc>
+	template<class EntrywiseConverter, typename Tx, class Allocx>
+	void mat<Ty, Alloc>::refill_par(const mat<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_)
+	{
+		if (nrows() != Src_.nrows() || ncols() != Src_.ncols()) throw std::range_error("the shapes of the two mats do not match");
+
+		std::transform(std::execution::par_unseq, Src_.mem_begin_(), Src_.mem_end_(), mem_begin_(), Convert_);
 	}
 
 	template<typename Ty, class Alloc>

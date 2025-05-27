@@ -364,7 +364,7 @@ namespace numer {
 			HeatMap(double Minimum_, double Maximum_, NormalizedColorMap Color_map_)
 				: min_thrs_(Minimum_), max_thrs_(Maximum_), clrmap_(Minimum_, Maximum_, Color_map_) {
 			}
-			HeatMap(double Minimum_, double Maximum_, LinearHeatMap Heatmap_)
+			explicit HeatMap(double Minimum_, double Maximum_, LinearHeatMap Heatmap_)
 				: min_thrs_(Minimum_), max_thrs_(Maximum_), clrmap_(Heatmap_) {
 			}
 
@@ -406,7 +406,7 @@ namespace numer {
 			CRainbow(double Maximum_)
 				: max_thrs_(Maximum_), crainbow_(sqrt(Maximum_)) {
 			}
-			CRainbow(double Maximum_, ComplxRainbowClr Crainbow_)
+			explicit CRainbow(double Maximum_, ComplxRainbowClr Crainbow_)
 				: max_thrs_(Maximum_), crainbow_(Crainbow_) {
 			}
 

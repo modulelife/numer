@@ -20,8 +20,13 @@
 namespace numer {
 	
 	template<typename Ty>
-	inline Ty chooseSecond(const Ty& First, const Ty& Second) {
+	inline constexpr Ty chooseSecond(const Ty& First, const Ty& Second) {
 		return Second;
+	}
+
+	template<typename Ty, typename Tx>
+	inline constexpr auto multiply(const Ty& First, const Tx& Second) {
+		return First * Second;
 	}
 
 }//namespace numer end

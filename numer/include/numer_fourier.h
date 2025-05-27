@@ -38,6 +38,26 @@
 namespace numer {
 
 
+    class FFTFreq {
+    private:
+        long long seq_len_;
+        double range_len_;
+
+    public:
+        FFTFreq(unsigned Seq_length_, double Range_lenght_)
+            : seq_len_(Seq_length_), range_len_(Range_lenght_) {
+        }
+
+        double operator()(unsigned Idx_) const {
+            long long id = static_cast<long long>(Idx_);
+            long long half_seql = seq_len_ / 2;
+            if (id <= half_seql) return 2.0 * Pi * static_cast<double>(id) / range_len_;
+            else if (id < seq_len_) return 2.0 * Pi * static_cast<double>(id - seq_len_) / range_len_;
+            else return 0.0;
+        }
+    };
+
+
     //you shouldn't use these
 	namespace detail_{
 
