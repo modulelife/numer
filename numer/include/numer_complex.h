@@ -228,7 +228,7 @@ inline double abs(const numer::Complex& X_) {
 }
 
 inline double norm(const numer::Complex& X_) {
-	return X_.amplitude();
+	return X_.sqrdAmp();
 }
 
 inline numer::Complex exp(const numer::Complex& X_) {
