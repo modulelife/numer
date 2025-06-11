@@ -81,17 +81,23 @@ namespace numer {
 
 
 	struct Color {
+		static NormalizedColorMap AqueousBlue();
 		static NormalizedColorMap Cividis();
 		static NormalizedColorMap Coolwarm();
 		static NormalizedColorMap CoolTech();
+		static NormalizedColorMap Emerald();
 		static NormalizedColorMap Glacier();
 		static NormalizedColorMap GoldenBlue();
 		static NormalizedColorMap GrayScale();
 		static NormalizedColorMap Hue();
 		static NormalizedColorMap Inferno();
+		static NormalizedColorMap Mist();
+		static NormalizedColorMap MulberryTea();
 		static NormalizedColorMap Plasma();
 		static NormalizedColorMap Rainbow();
+		static NormalizedColorMap Sandstone();
 		static NormalizedColorMap Thermo();
+		static NormalizedColorMap Twilight();
 		static NormalizedColorMap Vaporwave();
 		static NormalizedColorMap Viridis();
 		static NormalizedColorMap Zone_even();
