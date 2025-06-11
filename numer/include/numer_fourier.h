@@ -117,7 +117,7 @@ namespace numer {
 
                 for (size_t k = 0; k < len_; k += m) {
                     Complex w = 1.0;
-#pragma omp simd
+
                     for (size_t j = 0; j < m2; ++j) {
 
                         const Complex_Absorbing_T t = w * seq_cplx_[k + j + m2];
@@ -173,31 +173,29 @@ namespace numer {
                 init = true;
             }
 
-#pragma omp simd
             for (size_t i = 0; i < len_; ++i) {
                 a[i] = seq_cplx_[i] * w[i].conj();
                 b[i] = w[i];
             }
-#pragma omp simd
+
             for (size_t i = len_; i < len_ex; ++i) {
-                a[i] = 0.0;
+                a[i] = Complex_Absorbing_T{};
                 b[i] = w[i];
             }
 
             fft_radix2__<false>(a, len_ex);
             fft_radix2__<false>(b, len_ex);
-#pragma omp simd
+
             for (size_t i = 0; i < len_ex; ++i) {
                 a[i] *= b[i];
             }
             fft_radix2__<true>(a, len_ex);
             double normalizer = static_cast<double>(len_ex);
-#pragma omp simd
+
             for (size_t i = 0; i < len_; ++i) {
                 a[i] /= normalizer;
             }
 
-#pragma omp simd
             for (size_t i = 0; i < len_; ++i) {
                 double k = static_cast<double>(i);
                 seq_cplx_[i] = a[i] * w[i].conj();
@@ -216,7 +214,7 @@ namespace numer {
         if (is_pow2(Len_)) detail_::fft_radix2__<false>(Seq_complx_, Len_);
         else detail_::fft_bluestein__<false>(Seq_complx_, Len_);
         double normalizer = sqrt(Len_);
-#pragma omp simd
+
         for (size_t i = 0; i < Len_; ++i) {
             Seq_complx_[i] /= normalizer;
         }
@@ -230,7 +228,7 @@ namespace numer {
         if (is_pow2(Len_)) detail_::fft_radix2__<true>(Seq_complx_, Len_);
         else detail_::fft_bluestein__<true>(Seq_complx_, Len_);
         double normalizer = sqrt(Len_);
-#pragma omp simd
+
         for (size_t i = 0; i < Len_; ++i) {
             Seq_complx_[i] /= normalizer;
         }
@@ -254,7 +252,7 @@ namespace numer {
         if (is_pow2(Len_)) detail_::fft_radix2__<true>(Seq_complx_, Len_);
         else detail_::fft_bluestein__<true>(Seq_complx_, Len_);
         double normalizer = static_cast<double>(Len_);
-#pragma omp simd
+
         for (size_t i = 0; i < Len_; ++i) {
             Seq_complx_[i] /= normalizer;
         }
@@ -275,7 +273,7 @@ namespace numer {
         if (is_pow2(Len_)) detail_::fft_radix2__<false>(seq_buf, Len_);
         else detail_::fft_bluestein__<false>(seq_buf, Len_);
         double normalizer = sqrt(Len_);
-#pragma omp simd
+
         for (size_t i = 0; i < Len_; ++i) {
             seq_buf[i] /= normalizer;
         }
@@ -299,7 +297,7 @@ namespace numer {
         if (is_pow2(Len_)) detail_::fft_radix2__<true>(seq_buf, Len_);
         else detail_::fft_bluestein__<true>(seq_buf, Len_);
         double normalizer = sqrt(Len_);
-#pragma omp simd
+
         for (size_t i = 0; i < Len_; ++i) {
             seq_buf[i] /= normalizer;
         }
@@ -343,7 +341,7 @@ namespace numer {
         if (is_pow2(Len_)) detail_::fft_radix2__<true>(seq_buf, Len_);
         else detail_::fft_bluestein__<true>(seq_buf, Len_);
         double normalizer = static_cast<double>(Len_);
-#pragma omp simd
+
         for (size_t i = 0; i < Len_; ++i) {
             seq_buf[i] /= normalizer;
         }

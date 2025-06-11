@@ -10,7 +10,7 @@ namespace numer{
 	//circumference diameter ratio of circle
 	constexpr inline double Pi = 3.141592653589793;
 	//natural constant
-	constexpr inline double e = 2.718281828459045;
+	constexpr inline double Nc = 2.718281828459045;
 
 
 }//namespace numer end

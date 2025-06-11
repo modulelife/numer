@@ -22,7 +22,9 @@ namespace numer {
 
 		RGB clrCividis__(double X_);
 		RGB clrCoolwarm__(double X_);
+		RGB clrCoolTech__(double X_);
 		RGB clrGlacier__(double X_);
+		RGB clrGoldenBlue__(double X_);
 		RGB clrGrayScale__(double X_);
 		RGB clrInferno__(double X_);
 		RGB clrPlasma__(double X_);
@@ -127,6 +129,29 @@ namespace numer {
 			else return Clr3;
 		}
 
+		static numer::RGB clrCoolTech__(double X_) {
+			constexpr double t0 = 0.0, t1 = 0.2, t2 = 0.35, t3 = 0.5,
+				t4 = 0.65, t5 = 0.8, t6 = 1.0;
+
+			constexpr numer::RGB
+				Clr0{ 0x0b, 0x0b, 0x2b },
+				Clr1{ 0x2d, 0x0b, 0x64 },
+				Clr2{ 0x4a, 0x16, 0x96 },
+				Clr3{ 0x6a, 0x34, 0xc8 },
+				Clr4{ 0x29, 0x9c, 0xda },
+				Clr5{ 0x45, 0xe1, 0xd9 },
+				Clr6{ 0xa5, 0xff, 0xf0 };
+
+			if (X_ < t0) return Clr0;
+			else if (X_ < t1) return linearMix__(1.0 - (X_ - t0) / (t1 - t0), Clr0, Clr1);
+			else if (X_ < t2) return linearMix__(1.0 - (X_ - t1) / (t2 - t1), Clr1, Clr2);
+			else if (X_ < t3) return linearMix__(1.0 - (X_ - t2) / (t3 - t2), Clr2, Clr3);
+			else if (X_ < t4) return linearMix__(1.0 - (X_ - t3) / (t4 - t3), Clr3, Clr4);
+			else if (X_ < t5) return linearMix__(1.0 - (X_ - t4) / (t5 - t4), Clr4, Clr5);
+			else if (X_ < t6) return linearMix__(1.0 - (X_ - t5) / (t6 - t5), Clr5, Clr6);
+			else return Clr6;
+		}
+
 		RGB clrGlacier__(double X_) {
 
 			constexpr double t1 = 0.0, t2 = 0.4, t3 = 1.0;
@@ -140,6 +165,42 @@ namespace numer {
 			else if (X_ < t2) return linearMix__((t2 - X_) / (t2 - t1), Clr1, Clr2);
 			else if (X_ < t3) return linearMix__((t3 - X_) / (t3 - t2), Clr2, Clr3);
 			else return Clr3;
+		}
+
+		RGB clrGoldenBlue__(double X_) {
+			constexpr double t0 = 0.0, t1 = 0.08, t2 = 0.16, t3 = 0.24, t4 = 0.32,
+				t5 = 0.40, t6 = 0.48, t7 = 0.56, t8 = 0.64,
+				t9 = 0.72, t10 = 0.80, t11 = 0.88, t12 = 1.0;
+
+			constexpr numer::RGB
+				Clr0{ 0x00, 0x00, 0x00 }, 
+				Clr1{ 0x04, 0x05, 0x20 }, 
+				Clr2{ 0x0b, 0x10, 0x45 }, 
+				Clr3{ 0x14, 0x20, 0x70 }, 
+				Clr4{ 0x1f, 0x3d, 0x9f }, 
+				Clr5{ 0x29, 0x6a, 0xc8 }, 
+				Clr6{ 0x34, 0xa8, 0xdf }, 
+				Clr7{ 0x42, 0xd4, 0xe8 }, 
+				Clr8{ 0x80, 0xe8, 0xd6 }, 
+				Clr9{ 0xff, 0xdd, 0x35 }, 
+				Clr10{ 0xff, 0xb4, 0x20 },
+				Clr11{ 0xff, 0x8c, 0x1a },
+				Clr12{ 0xff, 0xf4, 0xdd };
+
+			if (X_ < t0) return Clr0;
+			else if (X_ < t1) return linearMix__(1.0 - (X_ - t0) / (t1 - t0), Clr0, Clr1);
+			else if (X_ < t2) return linearMix__(1.0 - (X_ - t1) / (t2 - t1), Clr1, Clr2);
+			else if (X_ < t3) return linearMix__(1.0 - (X_ - t2) / (t3 - t2), Clr2, Clr3);
+			else if (X_ < t4) return linearMix__(1.0 - (X_ - t3) / (t4 - t3), Clr3, Clr4);
+			else if (X_ < t5) return linearMix__(1.0 - (X_ - t4) / (t5 - t4), Clr4, Clr5);
+			else if (X_ < t6) return linearMix__(1.0 - (X_ - t5) / (t6 - t5), Clr5, Clr6);
+			else if (X_ < t7) return linearMix__(1.0 - (X_ - t6) / (t7 - t6), Clr6, Clr7);
+			else if (X_ < t8) return linearMix__(1.0 - (X_ - t7) / (t8 - t7), Clr7, Clr8);
+			else if (X_ < t9) return linearMix__(1.0 - (X_ - t8) / (t9 - t8), Clr8, Clr9);
+			else if (X_ < t10) return linearMix__(1.0 - (X_ - t9) / (t10 - t9), Clr9, Clr10);
+			else if (X_ < t11) return linearMix__(1.0 - (X_ - t10) / (t11 - t10), Clr10, Clr11);
+			else if (X_ < t12) return linearMix__(1.0 - (X_ - t11) / (t12 - t11), Clr11, Clr12);
+			else return Clr12;
 		}
 
 		RGB clrGrayScale__(double X_) {
@@ -173,32 +234,59 @@ namespace numer {
 
 		RGB clrPlasma__(double X_) {
 
+			constexpr double t0 = 0.0, t1 = 0.11, t2 = 0.22, t3 = 0.33,
+				t4 = 0.44, t5 = 0.55, t6 = 0.66, t7 = 0.77, t8 = 1.0;
 
-			constexpr double t1 = 0.0, t2 = 0.45, t3 = 0.6, t4 = 0.85, t5 = 1.0;
-			constexpr RGB
-				Clr1{ 0x0e, 0x07, 0x89 },
-				Clr2{ 0xb3, 0x30, 0x8d },
-				Clr3{ 0xee, 0x78, 0x50 },
-				Clr4{ 0xf9, 0xd6, 0x24 },
-				Clr5{ 0xf3, 0xea, 0x84 };
+			constexpr numer::RGB
+				Clr0{ 0x06, 0x00, 0x1d },
+				Clr1{ 0x23, 0x02, 0x5d },
+				Clr2{ 0x3c, 0x04, 0xa6 },
+				Clr3{ 0x80, 0x00, 0x86 },
+				Clr4{ 0xb7, 0x15, 0x40 },
+				Clr5{ 0xe3, 0x3b, 0x12 },
+				Clr6{ 0xff, 0x78, 0x00 },
+				Clr7{ 0xff, 0xc4, 0x00 },
+				Clr8{ 0xff, 0xfe, 0xd4 };
 
-
-			if (X_ < t1) return Clr1;
-			else if (X_ < t2) return linearMix__((t2 - X_) / (t2 - t1), Clr1, Clr2);
-			else if (X_ < t3) return linearMix__((t3 - X_) / (t3 - t2), Clr2, Clr3);
-			else if (X_ < t4) return linearMix__((t4 - X_) / (t4 - t3), Clr3, Clr4);
-			else if (X_ < t5) return linearMix__((t5 - X_) / (t5 - t4), Clr4, Clr5);
-			else return Clr5;
+			if (X_ < t0) return Clr0;
+			else if (X_ < t1) return linearMix__(1.0 - (X_ - t0) / (t1 - t0), Clr0, Clr1);
+			else if (X_ < t2) return linearMix__(1.0 - (X_ - t1) / (t2 - t1), Clr1, Clr2);
+			else if (X_ < t3) return linearMix__(1.0 - (X_ - t2) / (t3 - t2), Clr2, Clr3);
+			else if (X_ < t4) return linearMix__(1.0 - (X_ - t3) / (t4 - t3), Clr3, Clr4);
+			else if (X_ < t5) return linearMix__(1.0 - (X_ - t4) / (t5 - t4), Clr4, Clr5);
+			else if (X_ < t6) return linearMix__(1.0 - (X_ - t5) / (t6 - t5), Clr5, Clr6);
+			else if (X_ < t7) return linearMix__(1.0 - (X_ - t6) / (t7 - t6), Clr6, Clr7);
+			else if (X_ < t8) return linearMix__(1.0 - (X_ - t7) / (t8 - t7), Clr7, Clr8);
+			else return Clr8;
 		}
 
 		RGB clrRainbow__(double X_) {
-			if (X_ < 0.0) return { 68, 51, 154 };
-			if (X_ > 1.0) return { 231, 51, 54 };
-			RGB result{ 68, 51, 154 };
-			result.R += static_cast<uint8_t>(163 * curvS__(3.0, X_));
-			result.G += static_cast<uint8_t>(144 * bump__(X_));
-			result.B += static_cast<uint8_t>(-100 * curvS__(3.0, X_));
-			return result;
+			constexpr double t0 = 0.0, t1 = 0.14, t2 = 0.27, t3 = 0.39, t4 = 0.52,
+				t5 = 0.64, t6 = 0.73, t7 = 0.82, t8 = 0.91, t9 = 1.0;
+
+			constexpr numer::RGB
+				Clr0{ 0x0a, 0x00, 0x27 },
+				Clr1{ 0x26, 0x00, 0x7a },
+				Clr2{ 0x33, 0x0b, 0xc8 },
+				Clr3{ 0x00, 0x7f, 0xf4 },
+				Clr4{ 0x00, 0xd9, 0xf0 },
+				Clr5{ 0x3a, 0xfc, 0xb7 },
+				Clr6{ 0xa8, 0xff, 0x60 },
+				Clr7{ 0xf1, 0xef, 0x1c },
+				Clr8{ 0xff, 0x87, 0x00 },
+				Clr9{ 0xff, 0x00, 0x53 };
+
+			if (X_ < t0) return Clr0;
+			else if (X_ < t1) return linearMix__(1.0 - (X_ - t0) / (t1 - t0), Clr0, Clr1);
+			else if (X_ < t2) return linearMix__(1.0 - (X_ - t1) / (t2 - t1), Clr1, Clr2);
+			else if (X_ < t3) return linearMix__(1.0 - (X_ - t2) / (t3 - t2), Clr2, Clr3);
+			else if (X_ < t4) return linearMix__(1.0 - (X_ - t3) / (t4 - t3), Clr3, Clr4);
+			else if (X_ < t5) return linearMix__(1.0 - (X_ - t4) / (t5 - t4), Clr4, Clr5);
+			else if (X_ < t6) return linearMix__(1.0 - (X_ - t5) / (t6 - t5), Clr5, Clr6);
+			else if (X_ < t7) return linearMix__(1.0 - (X_ - t6) / (t7 - t6), Clr6, Clr7);
+			else if (X_ < t8) return linearMix__(1.0 - (X_ - t7) / (t8 - t7), Clr7, Clr8);
+			else if (X_ < t9) return linearMix__(1.0 - (X_ - t8) / (t9 - t8), Clr8, Clr9);
+			else return Clr9;
 		}
 
 		RGB clrThermo__(double X) {
@@ -386,8 +474,14 @@ namespace numer {
 	NormalizedColorMap Color::Coolwarm() {
 		return clrCoolwarm__;
 	}
+	NormalizedColorMap Color::CoolTech() {
+		return clrCoolTech__;
+	}
 	NormalizedColorMap Color::Glacier() {
 		return clrGlacier__;
+	}
+	NormalizedColorMap Color::GoldenBlue() {
+		return clrGoldenBlue__;
 	}
 	NormalizedColorMap Color::GrayScale() {
 		return clrGrayScale__;
