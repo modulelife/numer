@@ -346,9 +346,40 @@ namespace numer {
 
 	namespace gridclr {
 
+		namespace brt {
 
+			class gradual {
+			public:
+				double operator()(double x) const {
+					return sqrt(x);
+				}
+			};
+
+			class soft {
+			public:
+				double operator()(double x) const {
+					if (x < 0.0) return 0.0;
+					if (x < 1.0)return sqrt(x);
+					return 1.0;
+				}
+			};
+
+			class hard {
+			public:
+				double operator()(double x) const {
+					if (x < 0.0) return 0.0;
+					if (x < 1.0)return pow(x, 7.0);
+					return 1.0;
+				}
+			};
+
+
+		}//namespace brt end
+
+		template<class BrightnessStrategy>
 		class HeatMap {
 		private:
+			BrightnessStrategy	brightness_{};
 			GrayScale			to_double_{ 0.0, 1.0 };
 			double				min_thrs_;
 			double				max_thrs_;
@@ -375,7 +406,8 @@ namespace numer {
 				double y = (x_ - min_thrs_) / (max_thrs_ - min_thrs_);
 				RGB clr = clrmap_(x_);
 				Vec3<double> grid_clr{ to_double_(clr.R), to_double_(clr.G), to_double_(clr.B) };
-				grid_clr *= pow(y, 0.5);
+				const double bri = brightness_(y);
+				grid_clr *= bri;
 				return grid_clr;
 			}
 
@@ -386,15 +418,18 @@ namespace numer {
 				double y = (x_ - min_thrs_) / (max_thrs_ - min_thrs_);
 				RGB clr = clrmap_(x_);
 				Vec3<double> grid_clr{ to_double_(clr.R), to_double_(clr.G), to_double_(clr.B) };
-				grid_clr *= pow(y, 0.5);
+				const double bri = brightness_(y);
+				grid_clr *= bri;
 				return grid_clr;
 			}
 
 		};
 
 
+		template<class BrightnessStrategy>
 		class CRainbow{
 		private:
+			BrightnessStrategy	brightness_{};
 			GrayScale			to_double_{ 0.0, 1.0 };
 			double				max_thrs_;
 			ComplxRainbowClr	crainbow_;
@@ -417,7 +452,8 @@ namespace numer {
 				double y = x_ / max_thrs_;
 				RGB clr = crainbow_(c_);
 				Vec3<double> grid_clr{ to_double_(clr.R), to_double_(clr.G), to_double_(clr.B) };
-				grid_clr *= pow(y, 0.5);
+				const double bri = brightness_(y);
+				grid_clr *= bri;
 				return grid_clr;
 			}
 
