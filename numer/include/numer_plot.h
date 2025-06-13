@@ -310,21 +310,18 @@ namespace numer {
 
 			RangeSpec dim0_spec{ -L_MAX, L_MAX, Dim0_size_ }, dim1_spec{ -L_MAX, L_MAX, Dim1_size_ }, dim2_spec{ -L_MAX, L_MAX, Dim2_size_ };
 
-			if (max_size != Dim0_size_) {
-				double ratio = static_cast<double>(Dim0_size_) / static_cast<double>(max_size);
-				dim0_spec.start *= ratio;
-				dim0_spec.end *= ratio;
-			}
-			if (max_size != Dim1_size_) {
-				double ratio = static_cast<double>(Dim1_size_) / static_cast<double>(max_size);
-				dim1_spec.start *= ratio;
-				dim1_spec.end *= ratio;
-			}
-			if (max_size != Dim2_size_) {
-				double ratio = static_cast<double>(Dim2_size_) / static_cast<double>(max_size);
-				dim2_spec.start *= ratio;
-				dim2_spec.end *= ratio;
-			}
+
+			auto adjust_spec = [max_size](RangeSpec& spec, size_t dim_size) {
+				if (max_size != dim_size) {
+					double ratio = static_cast<double>(dim_size) / max_size;
+					spec.start *= ratio;
+					spec.end *= ratio;
+				}
+				};
+
+			adjust_spec(dim0_spec, Dim0_size_);
+			adjust_spec(dim1_spec, Dim1_size_);
+			adjust_spec(dim2_spec, Dim2_size_);
 
 			dim0_rg_.setRange(dim0_spec);
 			dim1_rg_.setRange(dim1_spec);
@@ -342,6 +339,103 @@ namespace numer {
 		}
 	};
 
+
+	template <class CubeContainer>
+	class FieldSmoothRelocator {
+	private:
+		const CubeContainer& base_;
+		RangeSampler dim0_rg_;
+		RangeSampler dim1_rg_;
+		RangeSampler dim2_rg_;
+		size_t dim0_size_;
+		size_t dim1_size_;
+		size_t dim2_size_;
+
+	public:
+		FieldSmoothRelocator(const CubeContainer& Cube_base_, size_t Dim0_size_, size_t Dim1_size_, size_t Dim2_size_)
+			: base_(Cube_base_),
+			dim0_size_(Dim0_size_),
+			dim1_size_(Dim1_size_),
+			dim2_size_(Dim2_size_)
+		{
+			constexpr double L_MAX = 1.0;
+			const size_t max_size = std::max({ Dim0_size_, Dim1_size_, Dim2_size_ });
+
+			RangeSpec dim0_spec{ -L_MAX, L_MAX, Dim0_size_ };
+			RangeSpec dim1_spec{ -L_MAX, L_MAX, Dim1_size_ };
+			RangeSpec dim2_spec{ -L_MAX, L_MAX, Dim2_size_ };
+
+			auto adjust_spec = [max_size](RangeSpec& spec, size_t dim_size) {
+				if (max_size != dim_size) {
+					double ratio = static_cast<double>(dim_size) / max_size;
+					spec.start *= ratio;
+					spec.end *= ratio;
+				}
+				};
+
+			adjust_spec(dim0_spec, Dim0_size_);
+			adjust_spec(dim1_spec, Dim1_size_);
+			adjust_spec(dim2_spec, Dim2_size_);
+
+			dim0_rg_.setRange(dim0_spec);
+			dim1_rg_.setRange(dim1_spec);
+			dim2_rg_.setRange(dim2_spec);
+		}
+
+		auto operator()(double X_, double Y_, double Z_) {
+			using Elem_T = std::decay_t<decltype(base_[0][0][0])>;
+
+			auto get_continuous_index = [](double coord, const RangeSampler& rg, size_t size)
+				-> std::pair<double, bool>
+				{
+					double normalized = (coord - rg.getStart()) / rg.getDiff();
+					if (normalized < 0.0 || normalized > 1.0)
+						return { 0.0, false };
+
+					return { normalized * (size - 1), true };
+				};
+
+			auto [idx0, valid0] = get_continuous_index(X_, dim0_rg_, dim0_size_);
+			auto [idx1, valid1] = get_continuous_index(Y_, dim1_rg_, dim1_size_);
+			auto [idx2, valid2] = get_continuous_index(Z_, dim2_rg_, dim2_size_);
+
+			if (!valid0 || !valid1 || !valid2)
+				return Elem_T{};
+
+			auto get_parts = [](double index) -> std::pair<size_t, double> {
+				size_t i = static_cast<size_t>(std::floor(index));
+				double f = index - i;
+				return { i, f };
+				};
+
+			auto [i0, fx] = get_parts(idx0);
+			auto [i1, fy] = get_parts(idx1);
+			auto [i2, fz] = get_parts(idx2);
+
+			i0 = (i0 >= dim0_size_ - 1) ? dim0_size_ - 2 : i0;
+			i1 = (i1 >= dim1_size_ - 1) ? dim1_size_ - 2 : i1;
+			i2 = (i2 >= dim2_size_ - 1) ? dim2_size_ - 2 : i2;
+
+			Elem_T v000 = base_[i0][i1][i2];
+			Elem_T v001 = base_[i0][i1][i2 + 1];
+			Elem_T v010 = base_[i0][i1 + 1][i2];
+			Elem_T v011 = base_[i0][i1 + 1][i2 + 1];
+			Elem_T v100 = base_[i0 + 1][i1][i2];
+			Elem_T v101 = base_[i0 + 1][i1][i2 + 1];
+			Elem_T v110 = base_[i0 + 1][i1 + 1][i2];
+			Elem_T v111 = base_[i0 + 1][i1 + 1][i2 + 1];
+
+			Elem_T v00 = v000 * (1 - fz) + v001 * fz;
+			Elem_T v01 = v010 * (1 - fz) + v011 * fz;
+			Elem_T v10 = v100 * (1 - fz) + v101 * fz;
+			Elem_T v11 = v110 * (1 - fz) + v111 * fz;
+
+			Elem_T v0 = v00 * (1 - fy) + v01 * fy;
+			Elem_T v1 = v10 * (1 - fy) + v11 * fy;
+
+			return v0 * (1 - fx) + v1 * fx;
+		}
+	};
 
 
 	namespace gridclr {
@@ -370,6 +464,16 @@ namespace numer {
 					if (x < 0.0) return 0.0;
 					if (x < 1.0)return pow(x, 7.0);
 					return 1.0;
+				}
+			};
+
+			class contour {
+			public:
+				double operator()(double x) const {
+					if (x < 0.0) return 0.0;
+					if (x < 1.0)return 1.0 * pow(x, 5.0);
+					if (x < 2.0)return 1.0 * pow(2.0 - x, 5.0);
+					return 0.0;
 				}
 			};
 
@@ -850,13 +954,6 @@ namespace numer {
 		//between 1.0 to any, don't set it too large though
 		TranslucentPlot3D& setBrightnessGain(double Gain_) {
 			bright_gain_ = Gain_;
-			return *this;
-		}
-
-		TranslucentPlot3D& setBackground(RGB Bg_clr_) {
-			bg_clr_[0] = Bg_clr_.R / 255.0;
-			bg_clr_[1] = Bg_clr_.G / 255.0;
-			bg_clr_[2] = Bg_clr_.B / 255.0;
 			return *this;
 		}
 

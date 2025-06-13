@@ -62,6 +62,14 @@ namespace numer {
 			return diff_ / idm_;
 		}
 
+		double getStart() const {
+			return start_;
+		}
+
+		double getDiff() const {
+			return diff_;
+		}
+
 		bool verifyAndIndex(double Coord_, size_t& Idx_var_) const {
 			if(diff_ == 0.0) return false;
 			double off = Coord_ - start_;
