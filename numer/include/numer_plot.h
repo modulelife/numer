@@ -459,6 +459,75 @@ namespace numer {
 
 		};
 
+		template<class BrightnessStrategy>
+		class CPhaseClr {
+		private:
+			BrightnessStrategy	brightness_{};
+			GrayScale			to_double_{ 0.0, 1.0 };
+			double				max_thrs_;
+			ComplxPhaseClr		cphsclr_;
+
+		public:
+			CPhaseClr()
+				: max_thrs_(1.0), cphsclr_() {
+			}
+			CPhaseClr(double Maximum_)
+				: max_thrs_(Maximum_), cphsclr_() {
+			}
+			explicit CPhaseClr(double Maximum_, ComplxPhaseClr Cphaseclr_)
+				: max_thrs_(Maximum_), cphsclr_(Cphaseclr_) {
+			}
+
+
+			Vec3<double> operator()(Complex c_) const {
+				double x_ = c_.sqrdAmp();
+
+				double y = x_ / max_thrs_;
+				RGB clr = cphsclr_(c_);
+				Vec3<double> grid_clr{ to_double_(clr.R), to_double_(clr.G), to_double_(clr.B) };
+				const double bri = brightness_(y);
+				grid_clr *= bri;
+				return grid_clr;
+			}
+
+		};
+
+		class GammaTransp {
+		private:
+			double min_thrs_;
+			double max_thrs_;
+			double gm_{ 1.0 };
+		public:
+			GammaTransp() : min_thrs_(-10.0), max_thrs_(10.0) {}
+			GammaTransp(double Minimum_, double Maximum_)
+				: min_thrs_(Minimum_), max_thrs_(Maximum_) {
+			}
+			GammaTransp(double Minimum_, double Maximum_, double Gamma_)
+				: min_thrs_(Minimum_), max_thrs_(Maximum_), gm_(Gamma_){
+			}
+
+			double operator()(double x_) const {
+				if (x_ < min_thrs_) return 0.0;
+				if (x_ < max_thrs_)
+				{
+					double y = (x_ - min_thrs_) / (max_thrs_ - min_thrs_);
+					return pow(y, gm_);
+				}
+				return 1.0;
+			}
+
+			double operator()(Complex c_) const {
+				double x = c_.sqrdAmp();
+				if (x < min_thrs_) return 0.0;
+				if (x < max_thrs_)
+				{
+					double y = (x - min_thrs_) / (max_thrs_ - min_thrs_);
+					return pow(y, gm_);
+				}
+				return 1.0;
+			}
+		};
+
 
 	}//namespace gridclr end
 
@@ -582,6 +651,281 @@ namespace numer {
 				RGB pixel{ to_uint8t(rgb[0]), to_uint8t(rgb[1]), to_uint8t(rgb[2]) };
 				image[arg.i__][arg.j__] = pixel;
 			};
+
+			std::for_each(std::execution::par, arg_list.begin(), arg_list.end(), frag_shader);
+
+			return image;
+		}
+
+	};
+
+
+	class LuminantPlot3D {
+	private:
+		const size_t hght_;
+		const size_t wdth_;
+		double distance_{ 2.0 };
+		double azimuth_{ Pi / 4.0 };
+		double elevation_{ Pi / 4.0 };
+		double hori_fov_{ Pi / 3.0 };
+		double render_dp_{ 1.0 };
+		size_t fineness_{ 100 };
+		double bright_gain_{ 1.0 };
+
+	public:
+		LuminantPlot3D(size_t Height_, size_t Width_)
+			:hght_(Height_), wdth_(Width_) {
+		}
+
+		LuminantPlot3D& setCamDistance(double Dist_) {
+			distance_ = Dist_;
+			return *this;
+		}
+
+		//between 0 to 2Pi
+		LuminantPlot3D& setCamAzimuthAngle(double Azim_) {
+			azimuth_ = Azim_;
+			return *this;
+		}
+
+		//between -Pi/2 to Pi/2
+		LuminantPlot3D& setCamElevationAngle(double Elev_) {
+			elevation_ = Elev_;
+			return *this;
+		}
+
+		//between 0 to 0.5Pi recommended, must less than Pi
+		LuminantPlot3D& setHorizontalFOV(double HFOV_) {
+			hori_fov_ = HFOV_;
+			return *this;
+		}
+
+		//between 1.0 to any, don't set it too large though
+		LuminantPlot3D& setRenderDepth(double Rdp_) {
+			render_dp_ = Rdp_;
+			return *this;
+		}
+
+		//number of samples along a single ray, aka image quality
+		LuminantPlot3D& setFineness(size_t Fine_) {
+			fineness_ = Fine_;
+			return *this;
+		}
+
+		//between 1.0 to any, don't set it too large though
+		LuminantPlot3D& setBrightnessGain(double Gain_) {
+			bright_gain_ = Gain_;
+			return *this;
+		}
+
+		template<class RelocatedField, typename Ty>
+		mat<RGB> renderImage(
+			RelocatedField&& Field_,
+			const std::function<Vec3<double>(Ty)> Grid_colorizer_) const
+		{
+			//convenient defs
+			using vec3 = Vec3<double>;
+			using vec3t = Vec3t<double>;
+
+			//calculate the basis transform matrix
+			constexpr vec3 ex{ 1.0, 0.0, 0.0 }, ey{ 0.0, 1.0, 0.0 }, ez{ 0.0, 0.0, 1.0 };
+			constexpr Vec3<vec3t> world_basis{ ex.t(), ey.t(), ez.t() };
+
+			vec3 cam_pos{
+				Spheric_To_Cartes3::x(distance_, Pi / 2.0 - elevation_, azimuth_),
+				Spheric_To_Cartes3::y(distance_, Pi / 2.0 - elevation_, azimuth_),
+				Spheric_To_Cartes3::z(distance_, Pi / 2.0 - elevation_, azimuth_),
+			};
+
+			vec3 ed = -cam_pos / distance_;
+			vec3 eh = ez ^ cam_pos;
+			eh /= sqrt(eh.t() * eh);
+			vec3 ev = eh ^ ed;
+			Vec3t<vec3> cam_basis{ ev, eh, ed };
+
+			const auto proj = world_basis * cam_basis;
+
+			//calculate parameters for ray generation
+			const double vh_ratio = static_cast<double>(hght_) / static_cast<double>(wdth_);
+			const double tan_half_hfov = tan(hori_fov_ / 2.0);
+			const double tan_half_vfov = tan_half_hfov * vh_ratio;
+
+			RangeSampler v_slope(RangeSpec{ tan_half_vfov, -tan_half_vfov, hght_ });
+			RangeSampler h_slope(RangeSpec{ -tan_half_hfov, tan_half_hfov, wdth_ });
+
+			RangeSampler len_para(RangeSpec{ (render_dp_ >= distance_ ? (0.01 * distance_) : distance_ - render_dp_), distance_ + render_dp_, fineness_ });
+
+			const double decay_normalizer = distance_ * distance_;
+			const auto decay = [=](double d) {
+				return decay_normalizer / (d * d);
+				};
+
+			//render
+			mat<RGB> image(hght_, wdth_);
+
+			using args__ = struct { size_t i__; size_t j__; };
+			mat<args__> arg_list = mat<args__>::creat(hght_, wdth_, [](size_t i, size_t j) {return args__{ i, j }; });
+
+			const auto frag_shader = [&](const args__& arg) -> void {
+				vec3 et{ v_slope(arg.i__), h_slope(arg.j__), 1.0 };
+				et /= sqrt(et.t() * et);
+
+				vec3 rgb{ 0.0, 0.0, 0.0 };
+
+				for (size_t i = 0; i < fineness_; ++i) {
+					const double dis = len_para(i);
+					vec3 cam_coord_pos = et * dis;
+					vec3 world_coord_pos = proj * cam_coord_pos + cam_pos;
+
+					Ty grid_val = Field_(world_coord_pos[0], world_coord_pos[1], world_coord_pos[2]);
+					rgb += Grid_colorizer_(grid_val) * decay(dis);
+				}
+				rgb *= len_para.step() * bright_gain_;
+
+				GrayScale to_uint8t(0.0, 1.0);
+				RGB pixel{ to_uint8t(rgb[0]), to_uint8t(rgb[1]), to_uint8t(rgb[2]) };
+				image[arg.i__][arg.j__] = pixel;
+				};
+
+			std::for_each(std::execution::par, arg_list.begin(), arg_list.end(), frag_shader);
+
+			return image;
+		}
+
+	};
+
+
+	class TranslucentPlot3D {
+	private:
+		const size_t hght_;
+		const size_t wdth_;
+		double distance_{ 2.0 };
+		double azimuth_{ Pi / 4.0 };
+		double elevation_{ Pi / 4.0 };
+		double hori_fov_{ Pi / 3.0 };
+		double render_dp_{ 1.0 };
+		size_t fineness_{ 100 };
+		double bright_gain_{ 1.0 };
+		Vec3<double> bg_clr_{ 0.0, 0.0, 0.0 };
+
+	public:
+		TranslucentPlot3D(size_t Height_, size_t Width_)
+			:hght_(Height_), wdth_(Width_) {
+		}
+
+		TranslucentPlot3D& setCamDistance(double Dist_) {
+			distance_ = Dist_;
+			return *this;
+		}
+
+		//between 0 to 2Pi
+		TranslucentPlot3D& setCamAzimuthAngle(double Azim_) {
+			azimuth_ = Azim_;
+			return *this;
+		}
+
+		//between -Pi/2 to Pi/2
+		TranslucentPlot3D& setCamElevationAngle(double Elev_) {
+			elevation_ = Elev_;
+			return *this;
+		}
+
+		//between 0 to 0.5Pi recommended, must less than Pi
+		TranslucentPlot3D& setHorizontalFOV(double HFOV_) {
+			hori_fov_ = HFOV_;
+			return *this;
+		}
+
+		//between 1.0 to any, don't set it too large though
+		TranslucentPlot3D& setRenderDepth(double Rdp_) {
+			render_dp_ = Rdp_;
+			return *this;
+		}
+
+		//number of samples along a single ray, aka image quality
+		TranslucentPlot3D& setFineness(size_t Fine_) {
+			fineness_ = Fine_;
+			return *this;
+		}
+
+		//between 1.0 to any, don't set it too large though
+		TranslucentPlot3D& setBrightnessGain(double Gain_) {
+			bright_gain_ = Gain_;
+			return *this;
+		}
+
+		TranslucentPlot3D& setBackground(RGB Bg_clr_) {
+			bg_clr_[0] = Bg_clr_.R / 255.0;
+			bg_clr_[1] = Bg_clr_.G / 255.0;
+			bg_clr_[2] = Bg_clr_.B / 255.0;
+			return *this;
+		}
+
+		template<class RelocatedField, typename Ty>
+		mat<RGB> renderImage(
+			RelocatedField&& Field_,
+			const std::function<Vec3<double>(Ty)> Grid_colorizer_,
+			const std::function<double(Ty)> Transparency_) const
+		{
+			//convenient defs
+			using vec3 = Vec3<double>;
+			using vec3t = Vec3t<double>;
+
+			//calculate the basis transform matrix
+			constexpr vec3 ex{ 1.0, 0.0, 0.0 }, ey{ 0.0, 1.0, 0.0 }, ez{ 0.0, 0.0, 1.0 };
+			constexpr Vec3<vec3t> world_basis{ ex.t(), ey.t(), ez.t() };
+
+			vec3 cam_pos{
+				Spheric_To_Cartes3::x(distance_, Pi / 2.0 - elevation_, azimuth_),
+				Spheric_To_Cartes3::y(distance_, Pi / 2.0 - elevation_, azimuth_),
+				Spheric_To_Cartes3::z(distance_, Pi / 2.0 - elevation_, azimuth_),
+			};
+
+			vec3 ed = -cam_pos / distance_;
+			vec3 eh = ez ^ cam_pos;
+			eh /= sqrt(eh.t() * eh);
+			vec3 ev = eh ^ ed;
+			Vec3t<vec3> cam_basis{ ev, eh, ed };
+
+			const auto proj = world_basis * cam_basis;
+
+			//calculate parameters for ray generation
+			const double vh_ratio = static_cast<double>(hght_) / static_cast<double>(wdth_);
+			const double tan_half_hfov = tan(hori_fov_ / 2.0);
+			const double tan_half_vfov = tan_half_hfov * vh_ratio;
+
+			RangeSampler v_slope(RangeSpec{ tan_half_vfov, -tan_half_vfov, hght_ });
+			RangeSampler h_slope(RangeSpec{ -tan_half_hfov, tan_half_hfov, wdth_ });
+
+			RangeSampler len_para(RangeSpec{ distance_ + render_dp_, (render_dp_ >= distance_ ? 0.0 : distance_ - render_dp_), fineness_ });
+
+			//render
+			mat<RGB> image(hght_, wdth_);
+
+			using args__ = struct { size_t i__; size_t j__; };
+			mat<args__> arg_list = mat<args__>::creat(hght_, wdth_, [](size_t i, size_t j) {return args__{ i, j }; });
+
+			const auto frag_shader = [&](const args__& arg) -> void {
+				vec3 et{ v_slope(arg.i__), h_slope(arg.j__), 1.0 };
+				et /= sqrt(et.t() * et);
+
+				vec3 rgb{ 0.0, 0.0, 0.0 };
+
+				for (size_t i = 0; i < fineness_; ++i) {
+					vec3 cam_coord_pos = et * len_para(i);
+					vec3 world_coord_pos = proj * cam_coord_pos + cam_pos;
+
+					Ty grid_val = Field_(world_coord_pos[0], world_coord_pos[1], world_coord_pos[2]);
+					vec3 gird_rgb = Grid_colorizer_(grid_val);
+					double transp = Transparency_(grid_val);
+					rgb = rgb * (1.0 - transp) + gird_rgb * transp;
+				}
+				rgb *= bright_gain_;
+
+				GrayScale to_uint8t(0.0, 1.0);
+				RGB pixel{ to_uint8t(rgb[0]), to_uint8t(rgb[1]), to_uint8t(rgb[2]) };
+				image[arg.i__][arg.j__] = pixel;
+				};
 
 			std::for_each(std::execution::par, arg_list.begin(), arg_list.end(), frag_shader);
 

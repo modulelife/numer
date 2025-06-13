@@ -524,8 +524,8 @@ namespace numer {
 
 		RGB clrHue__(double X_) {
 			if (X_ < 0.0) return HSL_to_RGB__(0.0, 50.0, 100.0);
-			if (X_ > 1.0) return HSL_to_RGB__(270.0, 50.0, 100.0);
-			return HSL_to_RGB__(X_ * 270.0, 50.0, 100.0);
+			if (X_ > 1.0) return HSL_to_RGB__(360.0, 50.0, 100.0);
+			return HSL_to_RGB__(X_ * 360.0, 50.0, 100.0);
 		}
 
 		RGB clrWhiteBlack_cyc__(double X_) {
