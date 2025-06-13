@@ -806,7 +806,6 @@ namespace numer {
 		double render_dp_{ 1.0 };
 		size_t fineness_{ 100 };
 		double bright_gain_{ 1.0 };
-		Vec3<double> bg_clr_{ 0.0, 0.0, 0.0 };
 
 	public:
 		TranslucentPlot3D(size_t Height_, size_t Width_)
