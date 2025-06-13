@@ -194,7 +194,7 @@ namespace numer {
 		}
 
 		template<class AbstractVec, class EntrywiseConverter, typename Ty>
-		Histogram& drawData(AbstractVec&& Vec_any_, size_t N_, EntrywiseConverter&& To_real_, const std::function<RGB(Ty)>& Colorize_) {
+		Histogram& drawData(AbstractVec&& Vec_any_, size_t N_, EntrywiseConverter&& To_real_, const std::function<RGB(Ty&)> Colorize_) {
 			if (N_ == 0) return *this;
 			RangeSampler range(RangeSpec{ min_, max_, hght_ });
 			RangeSampler idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ });
@@ -266,7 +266,7 @@ namespace numer {
 		}
 
 		template<class AbstractVec, typename Ty>
-		mat<RGB> renderImage(AbstractVec&& Vec_any_, size_t N_, const std::function<RGB(Ty)> Colorize_) const {
+		mat<RGB> renderImage(AbstractVec&& Vec_any_, size_t N_, const std::function<RGB(Ty&)> Colorize_) const {
 			
 			RangeSampler x_idxer(RangeSpec{ 0, static_cast<double>(N_ - 1), wdth_ });
 			mat<RGB> plot_img(hght_, wdth_);
@@ -279,7 +279,7 @@ namespace numer {
 		}
 
 		template<class AbstractMat, typename Ty>
-		mat<RGB> renderImage(AbstractMat&& Mat_any_, size_t Nrow_, size_t Ncol_, const std::function<RGB(Ty)> Colorize_) const {
+		mat<RGB> renderImage(AbstractMat&& Mat_any_, size_t Nrow_, size_t Ncol_, const std::function<RGB(Ty&)> Colorize_) const {
 
 			RangeSampler x_idxer(RangeSpec{ 0, static_cast<double>(Ncol_ - 1), wdth_ });
 			RangeSampler y_idxer(RangeSpec{ 0, static_cast<double>(Nrow_ - 1), hght_ });
@@ -592,7 +592,7 @@ namespace numer {
 		template<class RelocatedField, typename Ty>
 		mat<RGB> renderImage(
 			RelocatedField&& Field_,
-			const std::function<Vec3<double>(Ty)> Grid_colorizer_) const
+			const std::function<Vec3<double>(Ty&)> Grid_colorizer_) const
 		{
 			//convenient defs
 			using vec3 = Vec3<double>;
@@ -721,7 +721,7 @@ namespace numer {
 		template<class RelocatedField, typename Ty>
 		mat<RGB> renderImage(
 			RelocatedField&& Field_,
-			const std::function<Vec3<double>(Ty)> Grid_colorizer_) const
+			const std::function<Vec3<double>(Ty&)> Grid_colorizer_) const
 		{
 			//convenient defs
 			using vec3 = Vec3<double>;
@@ -864,8 +864,8 @@ namespace numer {
 		template<class RelocatedField, typename Ty>
 		mat<RGB> renderImage(
 			RelocatedField&& Field_,
-			const std::function<Vec3<double>(Ty)> Grid_colorizer_,
-			const std::function<double(Ty)> Transparency_) const
+			const std::function<Vec3<double>(Ty&)> Grid_colorizer_,
+			const std::function<double(Ty&)> Transparency_) const
 		{
 			//convenient defs
 			using vec3 = Vec3<double>;
