@@ -442,10 +442,24 @@ namespace numer {
 
 		namespace brt {
 
+			class linear {
+			public:
+				double operator()(double x) const {
+					return x;
+				}
+			};
+
 			class gradual {
 			public:
 				double operator()(double x) const {
 					return sqrt(x);
+				}
+			};
+
+			class steep {
+			public:
+				double operator()(double x) const {
+					return x * x;
 				}
 			};
 

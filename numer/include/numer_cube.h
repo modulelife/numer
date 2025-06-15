@@ -346,6 +346,7 @@ namespace numer {
 		Mat_Vec_		data_;
 
 	public:
+		template<typename Tx, class Allocx> friend class cube;
 
 		cube() : depth_(0), height_(0), width_(0), data_() {}
 		cube(size_t Depth_, size_t Height_, size_t Width_)
@@ -407,8 +408,23 @@ namespace numer {
 		}
 
 
+
+
+
 		template<class EntrywiseGenerator>
 		static cube<Ty, Alloc> creat_par(const size_t Depth_, const size_t Height_, const size_t Width_, EntrywiseGenerator&& Generate_);
+
+		template<class EntrywiseGenerator>
+		void refill_par(EntrywiseGenerator&& Generate_);
+
+		template<typename Tx, class Allocx, class EntrywiseConverter>
+		static cube<Ty, Alloc> creat_par(const cube<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_);
+
+		template<class Modifier>
+		void modify_par(Modifier&& Modify_);
+
+		template<class Mixer, typename Tx, class Allocx>
+		void overlay_par(const cube<Tx, Allocx>& Mask_, Mixer&& Mix_) noexcept(false);
 
 	};
 
@@ -417,16 +433,90 @@ namespace numer {
 	cube<Ty, Alloc> cube<Ty, Alloc>::creat_par(const size_t Depth_, const size_t Height_, const size_t Width_, EntrywiseGenerator&& Generate_)
 	{
 		std::vector<mat<Ty, Alloc>> data(Depth_);
-		for (unsigned i = 0; i < Depth_; ++i) {
-			mat<Ty, Alloc> layer = mat<Ty, Alloc>::creat_par(Height_, Width_, std::bind_front(Generate_, i));
-			data[i] = std::move(layer);
+
+		std::vector<size_t> args(Depth_);
+		for (size_t i = 0; i < Depth_; ++i) {
+			args[i] = i;
 		}
+		std::for_each_n(std::execution::par, args.begin(), Depth_, [&](size_t& id) {
+			mat<Ty, Alloc> layer = mat<Ty, Alloc>::creat(Height_, Width_, std::bind_front(Generate_, id));
+			data[id] = std::move(layer);
+			});
+
 		cube<Ty, Alloc> result;
 		result.depth_ = Depth_;
 		result.height_ = Height_;
 		result.width_ = Width_;
 		result.data_ = std::move(data);
 		return result;
+	}
+
+	template<typename Ty, class Alloc>
+	template<class EntrywiseGenerator>
+	void cube<Ty, Alloc>::refill_par(EntrywiseGenerator&& Generate_)
+	{
+		const size_t this_depth = depth();
+		std::vector<size_t> args(this_depth);
+		for (size_t i = 0; i < this_depth; ++i) {
+			args[i] = i;
+		}
+		std::for_each_n(std::execution::par, args.begin(), this_depth, [&](size_t& id) {
+			data_[id].refill(std::bind_front(Generate_, id));
+			});
+	}
+
+	template<typename Ty, class Alloc>
+	template<typename Tx, class Allocx, class EntrywiseConverter>
+	static cube<Ty, Alloc> cube<Ty, Alloc>::creat_par(const cube<Tx, Allocx>& Src_, EntrywiseConverter&& Convert_)
+	{
+		const size_t src_depth = Src_.depth();
+		std::vector<mat<Ty, Alloc>> data(src_depth);
+
+		std::vector<size_t> args(src_depth);
+		for (size_t i = 0; i < src_depth; ++i) {
+			args[i] = i;
+		}
+		std::for_each_n(std::execution::par, args.begin(), src_depth, [&](size_t& id) {
+			mat<Ty, Alloc> layer = mat<Ty, Alloc>::creat(Src_.data_[id], Convert_);
+			data[id] = std::move(layer);
+			});
+
+		cube<Ty, Alloc> result;
+		result.depth_ = src_depth;
+		result.height_ = Src_.height();
+		result.width_ = Src_.width();
+		result.data_ = std::move(data);
+		return result;
+	}
+
+	template<typename Ty, class Alloc>
+	template<class Modifier>
+	void cube<Ty, Alloc>::modify_par(Modifier&& Modify_)
+	{
+		const size_t this_depth = depth();
+		std::vector<size_t> args(this_depth);
+		for (size_t i = 0; i < this_depth; ++i) {
+			args[i] = i;
+		}
+		std::for_each_n(std::execution::par, args.begin(), this_depth, [&](size_t& id) {
+			data_[id].modify(Modify_);
+			});
+	}
+
+	template<typename Ty, class Alloc>
+	template<class Mixer, typename Tx, class Allocx>
+	void cube<Ty, Alloc>::overlay_par(const cube<Tx, Allocx>& Mask_, Mixer&& Mix_) noexcept(false)
+	{
+		const size_t this_depth = depth();
+		if (this_depth != Mask_.depth() || height() != Mask_.height() || width() != Mask_.width()) throw std::range_error("the shapes of the two cubes do not match");
+
+		std::vector<size_t> args(this_depth);
+		for (size_t i = 0; i < this_depth; ++i) {
+			args[i] = i;
+		}
+		std::for_each_n(std::execution::par, args.begin(), this_depth, [&](size_t& id) {
+			data_[id].overlay(Mask_.data_[id], Mix_);
+			});
 	}
 
 
