@@ -92,7 +92,7 @@ namespace numer {
 		}
 
 		self operator+(const difference_type Off_) const noexcept {
-			return self(base_iter_ + Off_);
+			return self(base_iter_ + Off_, row_, col_);
 		}
 
 		friend self operator+(const difference_type Off_, self Next_) noexcept {
@@ -106,7 +106,7 @@ namespace numer {
 		}
 
 		self operator-(const difference_type Off_) const noexcept {
-			return self(base_iter_ - Off_);
+			return self(base_iter_ - Off_ row_, col_);
 		}
 
 		difference_type operator-(const self& Right_) const noexcept {
@@ -210,7 +210,7 @@ namespace numer {
 		}
 
 		self operator+(const difference_type Off_) const noexcept {
-			return self(base_iter_ + Off_);
+			return self(base_iter_ + Off_, row_, col_);
 		}
 
 		friend self operator+(const difference_type Off_, self Next_) noexcept {
@@ -224,7 +224,7 @@ namespace numer {
 		}
 
 		self operator-(const difference_type Off_) const noexcept {
-			return self(base_iter_ - Off_);
+			return self(base_iter_ - Off_, row_, col_);
 		}
 
 		difference_type operator-(const self& Right_) const noexcept {
