@@ -106,7 +106,7 @@ namespace numer {
 		}
 
 		self operator-(const difference_type Off_) const noexcept {
-			return self(base_iter_ - Off_ row_, col_);
+			return self(base_iter_ - Off_, row_, col_);
 		}
 
 		difference_type operator-(const self& Right_) const noexcept {
